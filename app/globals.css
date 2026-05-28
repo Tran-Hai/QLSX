@@ -308,6 +308,20 @@ select option:focus {
   background: var(--card);
 }
 
+select optgroup {
+  background: #1a1a2e;
+  color: var(--t2);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px;
+}
+select optgroup option {
+  padding-left: 20px;
+  font-weight: 400;
+  color: var(--text);
+}
+
 .sel:hover, input:hover, textarea:hover {
   border-color: rgba(255,255,255,0.2);
 }
@@ -1176,3 +1190,83 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 .wh-empty {
   padding: 40px; text-align: center; color: var(--t3); font-size: 13px;
 }
+
+/* ===== TASKS ===== */
+.ts-form {
+  border: 1px solid var(--blue);
+  border-radius: var(--radius);
+  background: var(--card);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.ts-form-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 20px; font-weight: 600; font-size: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ts-form-header .ts-pin { color: var(--red); }
+.ts-form-body { padding: 20px; }
+.ts-form-body .ts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+.ts-form-body .ts-actions { display: flex; gap: 10px; }
+.ts-form-body label { display: block; font-size: 11px; font-weight: 600; color: var(--t2); margin-bottom: 5px; }
+.ts-form-body label .ts-req { color: var(--red); }
+
+.ts-task-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 16px; border: 1px solid rgba(255,255,255,0.06);
+  transition: var(--transition); cursor: pointer;
+}
+.ts-task-card:hover { border-color: rgba(255,255,255,0.15); }
+.ts-task-card .tsc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.ts-task-card .tsc-title { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+.ts-task-card .tsc-title .tsc-icon { font-size: 18px; }
+.ts-task-card .tsc-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--t2); margin-bottom: 8px; }
+.ts-task-card .tsc-bottom { display: flex; justify-content: space-between; align-items: center; }
+.ts-task-card .tsc-dept { font-size: 10px; color: var(--t3); }
+
+.ts-filter-bar {
+  display: flex; gap: 6px; align-items: center;
+  padding: 8px 16px; background: var(--bg2); border-radius: var(--radius-sm);
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.tsf-chip {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border-radius: 20px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+  color: var(--t2); cursor: pointer; font-size: 12px; transition: var(--transition);
+  white-space: nowrap;
+}
+.tsf-chip:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+.tsf-chip.active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue); }
+.tsf-chip .tsf-arrow { font-size: 8px; margin-left: 2px; }
+
+.tsf-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+  min-width: 180px; background: var(--bg2); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+  padding: 4px; animation: fadeIn 0.1s ease;
+}
+.tsf-dropdown .tsf-opt {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 12px; border: none; background: none; color: var(--t2);
+  cursor: pointer; font-size: 12px; border-radius: 4px; transition: var(--transition);
+}
+.tsf-dropdown .tsf-opt:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+.tsf-dropdown .tsf-opt.sel { color: var(--blue); background: var(--blue-bg); }
+
+.tsf-clear {
+  font-size: 11px; white-space: nowrap;
+  padding: 5px 10px; border-radius: 20px; border: none;
+  background: none; color: var(--t3); cursor: pointer; transition: var(--transition);
+}
+.tsf-clear:hover { color: var(--red); background: var(--red-bg); }
+
+.ts-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .ts-grid-2col { grid-template-columns: 1fr; } }
+
+.ts-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.ts-status-dot.todo { background: rgba(255,255,255,0.3); }
+.ts-status-dot.doing { background: var(--blue); }
+.ts-status-dot.done { background: var(--green); }
+.ts-status-dot.issue { background: var(--warn); }

@@ -46,26 +46,73 @@ export const ROLES: Record<string, { label: string; short: string }> = {
   cn: { label: "\u{1F464} C\u00F4ng nh\u00E2n", short: "CN" },
 };
 
-export const TASK_TYPES = [
-  { id: "nghiem_thu", label: "\u{1F4CB} Nghi\u1EC7m thu" },
-  { id: "kiem_tra", label: "\u{1F50D} Ki\u1EC3m tra" },
-  { id: "bao_tri", label: "\u{1F527} B\u1EA3o tr\u00EC" },
-  { id: "hop", label: "\u{1F4C5} H\u1ECDp" },
-  { id: "khac", label: "\u{1F4CC} Kh\u00E1c" },
+export interface TaskTypeDef {
+  id: string; label: string; icon: string; dept: string;
+}
+
+export const TASK_TYPES: TaskTypeDef[] = [
+  // Kỹ thuật
+  { id: "khao_sat", label: "Khảo sát công trình", icon: "\u{1FA9B}", dept: "kt" },
+  { id: "boc_khoi_luong", label: "Bóc khối lượng vật tư", icon: "\u{1F4CA}", dept: "kt" },
+  { id: "lap_du_toan", label: "Lập dự toán công trình", icon: "\u{1F4B9}", dept: "kt" },
+  { id: "lap_bang_bao_gia", label: "Lập bảng báo giá", icon: "\u{1F4B0}", dept: "kt" },
+  { id: "ra_ban_ve", label: "Ra bản vẽ công trình", icon: "\u{1F4D0}", dept: "kt" },
+  { id: "dat_hang", label: "Đặt hàng vật tư", icon: "\u{1F4E6}", dept: "kt" },
+  { id: "trien_khai_sx", label: "Triển khai sản xuất", icon: "\u{1F680}", dept: "kt" },
+  { id: "kiem_tra_sx", label: "Kiểm tra sản xuất", icon: "\u{1F50D}", dept: "kt" },
+  { id: "kiem_tra_ld", label: "Kiểm tra lắp đặt", icon: "\u{1F50E}", dept: "kt" },
+  { id: "ban_giao_mat_bang", label: "Bàn giao mặt bằng lắp đặt", icon: "\u{1F3D7}\uFE0F", dept: "kt" },
+  { id: "lam_viec_hien_truong", label: "Làm việc hiện trường với CĐT", icon: "\u{1F3E0}", dept: "kt" },
+  { id: "lap_ho_so_hoan_cong", label: "Lập hồ sơ hoàn công", icon: "\u{1F4C1}", dept: "kt" },
+  { id: "quan_ly_bao_hanh", label: "Quản lý bảo hành", icon: "\u{1F6E1}\uFE0F", dept: "kt" },
+  // Kinh doanh
+  { id: "tiep_can_khach", label: "Tiếp cận / gặp khách hàng", icon: "\u{1F91D}", dept: "kd" },
+  { id: "thuong_luong_gia", label: "Thương lượng / đàm phán giá", icon: "\u{1F4AC}", dept: "kd" },
+  { id: "chot_hop_dong", label: "Chốt hợp đồng", icon: "\u{270D}\uFE0F", dept: "kd" },
+  { id: "cham_soc_khach", label: "Chăm sóc khách hàng sau bàn giao", icon: "\u{2B50}", dept: "kd" },
+  // Sản xuất
+  { id: "tong_hop_kl_sx", label: "Tổng hợp KL sản xuất trong ngày", icon: "\u{1F4CB}", dept: "sx" },
+  { id: "xuat_nhap_kho", label: "Xuất nhập kho vật tư", icon: "\u{1F4E5}", dept: "sx" },
+  // Lắp đặt
+  { id: "tong_hop_kl_ld", label: "Tổng hợp KL lắp đặt trong ngày", icon: "\u{1F4CB}", dept: "ld" },
+  { id: "van_chuyen_hang", label: "Vận chuyển hàng lên công trình", icon: "\u{1F69B}", dept: "ld" },
+  // Kế toán
+  { id: "ho_so_nghiem_thu", label: "Hồ sơ nghiệm thu / thanh toán", icon: "\u{1F4C4}", dept: "ke_toan" },
+  { id: "theo_doi_cong_no", label: "Theo dõi công nợ", icon: "\u{1F4B3}", dept: "ke_toan" },
+  { id: "quyet_toan", label: "Quyết toán công trình", icon: "\u{1F9FE}", dept: "ke_toan" },
+  // Quản lý
+  { id: "nhap_so_lieu", label: "Nhập số liệu file quản lý", icon: "\u{1F4BB}", dept: "ql" },
+  { id: "bao_cao_tien_do", label: "Báo cáo tiến độ tuần / tháng", icon: "\u{1F4C8}", dept: "ql" },
+  { id: "hop_noi_bo", label: "Họp nội bộ dự án", icon: "\u{1F91D}", dept: "ql" },
+  { id: "khac", label: "Công việc khác", icon: "\u{1F4CC}", dept: "ql" },
 ];
 
-export const PRIO: Record<string, { l: string; c: string }> = {
-  urgent: { l: "Kh\u1EA9n", c: "var(--red)" },
-  high: { l: "Cao", c: "var(--warn)" },
-  normal: { l: "Th\u01B0\u1EDDng", c: "var(--green)" },
-  low: { l: "Th\u1EA5p", c: "var(--t3)" },
+export const TASK_DEPT_GROUPS = [
+  { id: "kt", label: "Kỹ thuật" },
+  { id: "kd", label: "Kinh doanh" },
+  { id: "sx", label: "Sản xuất" },
+  { id: "ld", label: "Lắp đặt" },
+  { id: "ke_toan", label: "Kế toán" },
+  { id: "ql", label: "Quản lý" },
+];
+
+export function getTaskTypeByDept(dept: string) {
+  return TASK_TYPES.filter(t => t.dept === dept);
+}
+
+export const PRIO: Record<string, { l: string; c: string; dot: string }> = {
+  normal: { l: "Bình thường", c: "var(--blue)", dot: "\u{1F535}" },
+  high: { l: "Ưu tiên cao", c: "var(--red)", dot: "\u{1F534}" },
+  low: { l: "Thấp", c: "var(--green)", dot: "\u{1F7E2}" },
 };
 
 export const DEPARTMENTS = [
-  { id: "ql", label: "Qu\u1EA3n l\u00FD" },
-  { id: "kt", label: "K\u1EF9 thu\u1EADt" },
-  { id: "sx", label: "S\u1EA3n xu\u1EA5t" },
-  { id: "ld", label: "L\u1EAFp \u0111\u1EB7t" },
+  { id: "kt", label: "Kỹ thuật" },
+  { id: "kd", label: "Kinh doanh" },
+  { id: "sx", label: "Sản xuất" },
+  { id: "ld", label: "Lắp đặt" },
+  { id: "ke_toan", label: "Kế toán" },
+  { id: "ql", label: "Quản lý" },
 ];
 
 export const TAB_NAMES: Record<string, string> = {
