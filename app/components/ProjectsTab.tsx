@@ -5,7 +5,7 @@ import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Select } from "./ui/Select";
 import { uid, fmtDate, todayStr } from "@/lib/utils";
-import { PN, ROLES } from "@/lib/constants";
+import { ALL_ITEMS, ROLES } from "@/lib/constants";
 
 interface Project {
   id: string; name: string; location: string;
@@ -13,6 +13,7 @@ interface Project {
   instCfg: Record<string, number>;
   personnel: Record<string, any>;
   sxDeadlines: Record<string, string>;
+  ldDeadlines: Record<string, string>;
   prodBatches: Record<string, number>;
   createdAt: string;
 }
@@ -58,7 +59,7 @@ export function ProjectsTab() {
     setEdit({
       id: uid(), name: "", location: "",
       prodTargets: {}, instCfg: {}, personnel: { kt: [], tssx: "", tsld: "" },
-      sxDeadlines: {}, prodBatches: {}, createdAt: todayStr(),
+      sxDeadlines: {}, ldDeadlines: {}, prodBatches: {}, createdAt: todayStr(),
     });
     setEditTab("chung");
   };
@@ -98,8 +99,10 @@ export function ProjectsTab() {
                   return names ? <div key={role} className="mb-4"><span className="text-t2">{label}:</span> {names}</div> : null;
                 })}
               </div>
-              <div className="text-sm text-t2 mb-8">
-                📅 {Object.values(p.sxDeadlines).filter(Boolean).sort().reverse()[0] || "Không có deadline"}
+              <div className="text-sm mb-8">
+                <span className="text-t2">📅 SX:</span> {Object.values(p.sxDeadlines).filter(Boolean).sort().reverse()[0] || "—"}
+                <span style={{marginLeft:12}}><span className="text-t2">🔧 LĐ:</span> {Object.values(p.ldDeadlines).filter(Boolean).sort().reverse()[0] || "—"}
+                </span>
               </div>
               <div style={{background:"rgba(255,255,255,0.06)", borderRadius:8, height:6, overflow:"hidden", position:"relative"}}>
                 <div style={{width:`${progress}%`, background:progressColor(progress), height:"100%", borderRadius:8, transition:"width 0.3s ease"}} />
@@ -114,9 +117,9 @@ export function ProjectsTab() {
         {edit && (
           <div>
             <div className="tab-inline">
-              {["chung","nhan_su","sx","ld","deadline"].map((t) => (
+              {["chung","nhan_su","sx","ld","deadline_sx","deadline_ld"].map((t) => (
                 <button key={t} className={`tab-inline-btn ${editTab===t?"active":""}`} onClick={() => setEditTab(t)}>
-                  {{chung:"Chung", nhan_su:"Nhân sự", sx:"SX", ld:"LĐ", deadline:"Deadline"}[t]}
+                  {{chung:"Chung", nhan_su:"Nhân sự", sx:"SX", ld:"LĐ", deadline_sx:"Deadline SX", deadline_ld:"Deadline LĐ"}[t]}
                 </button>
               ))}
             </div>
@@ -153,7 +156,7 @@ export function ProjectsTab() {
 
             {editTab === "sx" && (
               <div className="frm">
-                {PN.map((item) => (
+                {ALL_ITEMS.filter(i => i.category === "sx").map((item) => (
                   <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
                     <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
                     <input type="number" placeholder="Mục tiêu" style={{width:120}}
@@ -173,7 +176,7 @@ export function ProjectsTab() {
 
             {editTab === "ld" && (
               <div className="frm">
-                {PN.map((item) => (
+                {ALL_ITEMS.filter(i => i.category === "ld").map((item) => (
                   <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
                     <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
                     <input type="number" placeholder="Cần lắp" style={{width:120}}
@@ -186,15 +189,31 @@ export function ProjectsTab() {
               </div>
             )}
 
-            {editTab === "deadline" && (
+            {editTab === "deadline_sx" && (
               <div className="frm">
-                {PN.map((item) => (
+                <h4 className="text-sm font-bold mb-8" style={{color:"var(--blue)"}}>Deadline sản xuất</h4>
+                {ALL_ITEMS.filter(i => i.category === "sx").map((item) => (
                   <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
                     <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
                     <input type="date" style={{width:160}}
                       value={(edit.sxDeadlines as any)[item.id] || ""}
                       onChange={(e) => setEdit({
                         ...edit, sxDeadlines: {...edit.sxDeadlines, [item.id]: e.target.value},
+                      })} />
+                  </div>
+                ))}
+              </div>
+            )}
+            {editTab === "deadline_ld" && (
+              <div className="frm">
+                <h4 className="text-sm font-bold mb-8" style={{color:"var(--purple)"}}>Deadline lắp đặt</h4>
+                {ALL_ITEMS.filter(i => i.category === "ld").map((item) => (
+                  <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
+                    <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
+                    <input type="date" style={{width:160}}
+                      value={(edit.ldDeadlines as any)[item.id] || ""}
+                      onChange={(e) => setEdit({
+                        ...edit, ldDeadlines: {...edit.ldDeadlines, [item.id]: e.target.value},
                       })} />
                   </div>
                 ))}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/Button";
 import { Select } from "./ui/Select";
 import { uid, todayStr } from "@/lib/utils";
-import { PN } from "@/lib/constants";
+import { INST_ITEMS } from "@/lib/constants";
 
 interface InstLog {
   id: string; date: string; projectId: string; projectName: string;
@@ -49,8 +49,8 @@ export function InstallationTab() {
   };
 
   const itemList = Object.keys(cfg).length > 0
-    ? Object.keys(cfg).map(id => ({ id, item: PN.find(p => p.id === id) }))
-    : PN.map(p => ({ id: p.id, item: p }));
+    ? Object.keys(cfg).map(id => ({ id, item: INST_ITEMS.find(p => p.id === id) }))
+    : INST_ITEMS.map(p => ({ id: p.id, item: p }));
 
   return (
     <div>

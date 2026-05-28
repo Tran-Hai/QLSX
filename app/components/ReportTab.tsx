@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/Button";
 import { Select } from "./ui/Select";
 import { getMon, weekDates, weekRangeStr, fmtDate, addDays, uid, todayStr } from "@/lib/utils";
-import { PN } from "@/lib/constants";
+import { ALL_ITEMS } from "@/lib/constants";
 
 interface ProdLog {
   id: string; date: string; projectId: string; projectName: string;
@@ -86,7 +86,7 @@ export function ReportTab() {
                 </tr>
               </thead>
               <tbody>
-                {PN.map(item => (
+                {ALL_ITEMS.map(item => (
                   <tr key={item.id}>
                     <td style={{fontWeight:500, position:"sticky", left:0, background:"var(--card)", zIndex:1}}>
                       {item.label}

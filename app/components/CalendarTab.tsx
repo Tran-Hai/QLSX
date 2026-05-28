@@ -7,6 +7,7 @@ import { getMon, weekDates, weekRangeStr, fmtDate, addDays, todayStr } from "@/l
 interface Project {
   id: string; name: string;
   sxDeadlines: Record<string, string>;
+  ldDeadlines: Record<string, string>;
   prodTargets: Record<string, number>;
 }
 interface TaskItem {
@@ -62,15 +63,18 @@ export function CalendarTab() {
             </thead>
             <tbody>
               {projects.flatMap(p => {
-                const items = Object.entries(p.sxDeadlines || {});
-                return items.length > 0
-                  ? items.map(([itemId, deadline], idx) => {
+                const sxItems = Object.entries(p.sxDeadlines || {}).map(([itemId, deadline]) => ({ itemId, deadline, type: "SX" as const }));
+                const ldItems = Object.entries(p.ldDeadlines || {}).map(([itemId, deadline]) => ({ itemId, deadline, type: "LĐ" as const }));
+                const allItems = [...sxItems, ...ldItems];
+                return allItems.length > 0
+                  ? allItems.map(({ itemId, deadline, type }, idx) => {
                       const isOverdue = deadline < today;
                       return (
                         <tr key={`${p.id}-${itemId}-${idx}`}>
                           <td style={{fontSize:12, fontWeight:500, paddingLeft:12}}>
                             <span className="text-t2">{p.name}</span>
                             <br />
+                            <span className={`badge ${type === "SX" ? "bi" : ""}`} style={{marginRight:6, fontSize:10}}>{type}</span>
                             <span>{itemId}</span>
                             {isOverdue && <span className="badge br" style={{marginLeft:8}}>Quá hạn</span>}
                           </td>
@@ -82,7 +86,7 @@ export function CalendarTab() {
                               <td key={ds} style={{background: isDeadline && isOverdue ? "var(--red-bg)" : isDeadline ? "var(--green-bg)" : undefined}}>
                                 {isDeadline && (
                                   <div className="cal-item" style={{background:"transparent", padding:0}}>
-                                    📅 Hạn
+                                    📅 Hạn {type}
                                   </div>
                                 )}
                                 {dayTasks.map(t => {

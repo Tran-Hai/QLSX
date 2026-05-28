@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/Button";
 import { Select } from "./ui/Select";
 import { uid, todayStr } from "@/lib/utils";
-import { PN } from "@/lib/constants";
+import { PROD_ITEMS } from "@/lib/constants";
 
 interface ProjectExtended {
   id: string; name: string;
@@ -56,7 +56,7 @@ export function ProductionTab() {
     load();
   };
 
-  const itemList = Object.keys(targets).length > 0 ? Object.keys(targets).map(id => ({ id, item: PN.find(p => p.id === id) })) : PN.map(p => ({ id: p.id, item: p }));
+  const itemList = Object.keys(targets).length > 0 ? Object.keys(targets).map(id => ({ id, item: PROD_ITEMS.find(p => p.id === id) })) : PROD_ITEMS.map(p => ({ id: p.id, item: p }));
 
   return (
     <div>

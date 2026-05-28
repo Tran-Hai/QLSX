@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/Button";
 import { Select } from "./ui/Select";
-import { PN } from "@/lib/constants";
+import { ALL_ITEMS } from "@/lib/constants";
 
 interface ProjectExtended {
   id: string; name: string;
@@ -68,7 +68,7 @@ export function WarehouseTab() {
                 </tr>
               </thead>
               <tbody>
-                {PN.map(item => {
+                {ALL_ITEMS.map(item => {
                   const target = (targets as any)[item.id] || 0;
                   const prod = getProdQty(item.id);
                   const kho = getKhoQty(item.id);
@@ -101,7 +101,7 @@ export function WarehouseTab() {
             <tbody>
               {filteredKho.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(e => {
                 const p = projects.find(x => x.id === e.projectId);
-                const item = PN.find(x => x.id === e.itemId);
+                const item = ALL_ITEMS.find(x => x.id === e.itemId);
                 return (
                   <tr key={e.id}>
                     <td>{e.date}</td>

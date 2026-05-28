@@ -9,6 +9,7 @@ export const projects = pgTable("projects", {
   instCfg: jsonb("inst_cfg").notNull().default("{}"),
   personnel: jsonb("personnel").notNull().default("{}"),
   sxDeadlines: jsonb("sx_deadlines").notNull().default("{}"),
+  ldDeadlines: jsonb("ld_deadlines").notNull().default("{}"),
   prodBatches: jsonb("prod_batches").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(""),
 });
