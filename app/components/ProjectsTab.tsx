@@ -117,9 +117,9 @@ export function ProjectsTab() {
         {edit && (
           <div>
             <div className="tab-inline">
-              {["chung","nhan_su","sx","ld","deadline_sx","deadline_ld"].map((t) => (
+              {["chung","nhan_su","sx","ld"].map((t) => (
                 <button key={t} className={`tab-inline-btn ${editTab===t?"active":""}`} onClick={() => setEditTab(t)}>
-                  {{chung:"Chung", nhan_su:"Nhân sự", sx:"SX", ld:"LĐ", deadline_sx:"Deadline SX", deadline_ld:"Deadline LĐ"}[t]}
+                  {{chung:"Chung", nhan_su:"Nhân sự", sx:"SX", ld:"LĐ"}[t]}
                 </button>
               ))}
             </div>
@@ -158,16 +158,21 @@ export function ProjectsTab() {
               <div className="frm">
                 {ALL_ITEMS.filter(i => i.category === "sx").map((item) => (
                   <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
-                    <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
-                    <input type="number" placeholder="Mục tiêu" style={{width:120}}
+                    <label style={{flex:1, marginBottom:0, alignSelf:"center", fontSize:12}}>{item.label}</label>
+                    <input type="number" placeholder="Mục tiêu" style={{width:90}}
                       value={(edit.prodTargets as any)[item.id] || ""}
                       onChange={(e) => setEdit({
                         ...edit, prodTargets: {...edit.prodTargets, [item.id]: Number(e.target.value)},
                       })} />
-                    <input type="number" placeholder="Số lô" style={{width:100}}
+                    <input type="number" placeholder="Số lô" style={{width:80}}
                       value={(edit.prodBatches as any)[item.id] || ""}
                       onChange={(e) => setEdit({
                         ...edit, prodBatches: {...edit.prodBatches, [item.id]: Number(e.target.value)},
+                      })} />
+                    <input type="date" style={{width:140}}
+                      value={(edit.sxDeadlines as any)[item.id] || ""}
+                      onChange={(e) => setEdit({
+                        ...edit, sxDeadlines: {...edit.sxDeadlines, [item.id]: e.target.value},
                       })} />
                   </div>
                 ))}
@@ -178,39 +183,13 @@ export function ProjectsTab() {
               <div className="frm">
                 {ALL_ITEMS.filter(i => i.category === "ld").map((item) => (
                   <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
-                    <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
-                    <input type="number" placeholder="Cần lắp" style={{width:120}}
+                    <label style={{flex:1, marginBottom:0, alignSelf:"center", fontSize:12}}>{item.label}</label>
+                    <input type="number" placeholder="Cần lắp" style={{width:90}}
                       value={(edit.instCfg as any)[item.id] || ""}
                       onChange={(e) => setEdit({
                         ...edit, instCfg: {...edit.instCfg, [item.id]: Number(e.target.value)},
                       })} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {editTab === "deadline_sx" && (
-              <div className="frm">
-                <h4 className="text-sm font-bold mb-8" style={{color:"var(--blue)"}}>Deadline sản xuất</h4>
-                {ALL_ITEMS.filter(i => i.category === "sx").map((item) => (
-                  <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
-                    <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
-                    <input type="date" style={{width:160}}
-                      value={(edit.sxDeadlines as any)[item.id] || ""}
-                      onChange={(e) => setEdit({
-                        ...edit, sxDeadlines: {...edit.sxDeadlines, [item.id]: e.target.value},
-                      })} />
-                  </div>
-                ))}
-              </div>
-            )}
-            {editTab === "deadline_ld" && (
-              <div className="frm">
-                <h4 className="text-sm font-bold mb-8" style={{color:"var(--purple)"}}>Deadline lắp đặt</h4>
-                {ALL_ITEMS.filter(i => i.category === "ld").map((item) => (
-                  <div key={item.id} className="frm-row" style={{alignItems:"center"}}>
-                    <label style={{flex:1, marginBottom:0, alignSelf:"center"}}>{item.label}</label>
-                    <input type="date" style={{width:160}}
+                    <input type="date" style={{width:140}}
                       value={(edit.ldDeadlines as any)[item.id] || ""}
                       onChange={(e) => setEdit({
                         ...edit, ldDeadlines: {...edit.ldDeadlines, [item.id]: e.target.value},
@@ -219,6 +198,8 @@ export function ProjectsTab() {
                 ))}
               </div>
             )}
+
+
 
             <div className="frm-actions mt-16">
               <Button variant="ghost" onClick={() => setEdit(null)}>Huỷ</Button>
