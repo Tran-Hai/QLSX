@@ -88,3 +88,11 @@ export const TABLE_WHITELIST = [
 ] as const;
 
 export type TableName = typeof TABLE_WHITELIST[number];
+
+export const TABLE_KEY_MAP: Record<string, string> = {
+  prod_logs: "prodLogs",
+  inst_logs: "instLogs",
+  kho_entries: "khoEntries",
+  cong_nhat: "congNhat",
+  app_settings: "appSettings",
+};

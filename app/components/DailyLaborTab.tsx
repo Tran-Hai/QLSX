@@ -15,6 +15,11 @@ export function DailyLaborTab() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [logs, setLogs] = useState<CongNhat[]>([]);
   const [selProject, setSelProject] = useState("");
+  const [formProject, setFormProject] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formWorkers, setFormWorkers] = useState("");
+  const [formHours, setFormHours] = useState("8");
+  const [formDate, setFormDate] = useState(todayStr());
 
   const load = () => {
     fetch("/api/projects").then(r=>r.json()).then(setProjects).catch(()=>{});
@@ -24,18 +29,18 @@ export function DailyLaborTab() {
   useEffect(load, []);
 
   const add = async () => {
-    const project = projects.find(p => p.id === selProject);
-    if (!project) return;
-    const desc = (document.getElementById("cn-desc") as HTMLInputElement).value;
-    const workers = Number((document.getElementById("cn-workers") as HTMLInputElement).value) || 0;
-    const hours = Number((document.getElementById("cn-hours") as HTMLInputElement).value) || 8;
-    const date = (document.getElementById("cn-date") as HTMLInputElement).value || todayStr();
-    if (!desc || !workers) return;
+    const project = projects.find(p => p.id === formProject);
+    if (!project || !formDesc || !formWorkers) return;
+    const workers = Number(formWorkers) || 0;
+    const hours = Number(formHours) || 8;
+    if (workers <= 0) return;
     await fetch("/api/cong_nhat", {
       method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ id: uid(), date, projectId: selProject, projectName: project.name, description: desc, workers, hours, note: "", createdAt: todayStr() }),
+      body: JSON.stringify({ id: uid(), date: formDate, projectId: formProject, projectName: project.name, description: formDesc, workers, hours, note: "", createdAt: todayStr() }),
     });
-    (document.getElementById("cn-desc") as HTMLInputElement).value = "";
+    setFormDesc("");
+    setFormWorkers("");
+    setFormHours("8");
     load();
   };
 
@@ -63,20 +68,27 @@ export function DailyLaborTab() {
         <h3 className="mb-12" style={{fontSize:15}}>Thêm công nhật</h3>
         <div className="frm-row">
           <div>
+            <label>Công trình</label>
+            <Select value={formProject} onChange={e => setFormProject(e.target.value)}>
+              <option value="">-- Chọn --</option>
+              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </Select>
+          </div>
+          <div>
             <label>Ngày</label>
-            <input type="date" id="cn-date" defaultValue={todayStr()} />
+            <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
           </div>
           <div>
             <label>Mô tả</label>
-            <input type="text" id="cn-desc" placeholder="Mô tả công việc" />
+            <input type="text" value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Mô tả công việc" />
           </div>
           <div>
             <label>Số công nhân</label>
-            <input type="number" id="cn-workers" placeholder="0" />
+            <input type="number" value={formWorkers} onChange={e => setFormWorkers(e.target.value)} placeholder="0" />
           </div>
           <div>
             <label>Số giờ</label>
-            <input type="number" id="cn-hours" defaultValue="8" />
+            <input type="number" value={formHours} onChange={e => setFormHours(e.target.value)} />
           </div>
           <div>
             <label>&nbsp;</label>

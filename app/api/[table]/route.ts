@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { TABLE_WHITELIST, TableName } from "@/lib/constants";
+import { TABLE_WHITELIST, TABLE_KEY_MAP, TableName } from "@/lib/constants";
 import { eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
 
@@ -19,7 +19,11 @@ export async function GET(
   if (!TABLE_WHITELIST.includes(table as TableName)) {
     return Response.json({ error: "Invalid table" }, { status: 400 });
   }
-  const tbl: AnyTable = schema[table as keyof typeof schema];
+  const key = TABLE_KEY_MAP[table] || table;
+  const tbl: AnyTable = schema[key as keyof typeof schema];
+  if (!tbl) {
+    return Response.json({ error: "Invalid table" }, { status: 400 });
+  }
   const rows = await getDb().select().from(tbl);
   return Response.json(rows);
 }
@@ -33,7 +37,8 @@ export async function POST(
     return Response.json({ error: "Invalid table" }, { status: 400 });
   }
   const body = await req.json();
-  const tbl: AnyTable = schema[table as keyof typeof schema];
+  const key = TABLE_KEY_MAP[table] || table;
+  const tbl: AnyTable = schema[key as keyof typeof schema];
   const d = getDb();
   const existing: any[] = body.id
     ? await d.select().from(tbl).where(eq(tbl.id, body.id))

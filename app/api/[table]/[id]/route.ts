@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { TABLE_WHITELIST, TableName } from "@/lib/constants";
+import { TABLE_WHITELIST, TABLE_KEY_MAP, TableName } from "@/lib/constants";
 import { eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
 
@@ -19,7 +19,8 @@ export async function GET(
   if (!TABLE_WHITELIST.includes(table as TableName)) {
     return Response.json({ error: "Invalid table" }, { status: 400 });
   }
-  const tbl: AnyTable = schema[table as keyof typeof schema];
+  const key = TABLE_KEY_MAP[table] || table;
+  const tbl: AnyTable = schema[key as keyof typeof schema];
   const rows: any[] = await getDb().select().from(tbl).where(eq(tbl.id, id));
   if (!rows.length) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -36,7 +37,8 @@ export async function PUT(
     return Response.json({ error: "Invalid table" }, { status: 400 });
   }
   const body = await req.json();
-  const tbl: AnyTable = schema[table as keyof typeof schema];
+  const key = TABLE_KEY_MAP[table] || table;
+  const tbl: AnyTable = schema[key as keyof typeof schema];
   const d = getDb();
   const result: any = await d.update(tbl).set(body).where(eq(tbl.id, id)).returning();
   if (!result.length) {
@@ -53,7 +55,8 @@ export async function DELETE(
   if (!TABLE_WHITELIST.includes(table as TableName)) {
     return Response.json({ error: "Invalid table" }, { status: 400 });
   }
-  const tbl: AnyTable = schema[table as keyof typeof schema];
+  const key = TABLE_KEY_MAP[table] || table;
+  const tbl: AnyTable = schema[key as keyof typeof schema];
   await getDb().delete(tbl).where(eq(tbl.id, id));
   return Response.json({ success: true });
 }
