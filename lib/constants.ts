@@ -39,6 +39,15 @@ export const INST_ITEMS: ItemDef[] = [
 
 export const ALL_ITEMS = [...PROD_ITEMS, ...INST_ITEMS];
 
+/** Maps installation item IDs to the production item ID that supplies the physical good for kho check.
+ *  Items not listed (e.g. purchased hàng mua ngoài) have no production counterpart. */
+export const KHO_INST_MAP: Record<string, string> = {
+  lap_nhom_xingfa: "nhom_xingfa",
+  lap_cua_nhom_ranh_c: "nhom_ranh_c",
+  lap_tu_bep: "tu_bep_tu_quan_ao",
+  lap_vach_kinh_mat_dung: "vach_kinh_mat_dung",
+};
+
 export const ROLES: Record<string, { label: string; short: string }> = {
   kt: { label: "\u{1F477} K\u1EF9 thu\u1EADt", short: "KT" },
   tssx: { label: "\u{1F527} T\u1ED5 tr\u01B0\u1EDFng SX", short: "TT-SX" },

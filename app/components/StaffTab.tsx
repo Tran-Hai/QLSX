@@ -29,32 +29,37 @@ export function StaffTab() {
   useEffect(load, []);
 
   const saveStaff = async (s: StaffMember) => {
+    const exists = staff.find(x => x.id === s.id);
+    if (exists) {
+      setStaff(prev => prev.map(x => x.id === s.id ? s : x));
+    } else {
+      setStaff(prev => [...prev, s]);
+    }
+    setEditing(null);
     await fetch("/api/staff", {
       method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(s),
     });
-    setEditing(null);
-    load();
   };
 
   const delStaff = async (id: string) => {
     if (!confirm("Xoá nhân sự này?")) return;
+    setStaff(prev => prev.filter(x => x.id !== id));
     await fetch(`/api/staff/${id}`, { method: "DELETE" });
-    load();
   };
 
   const updateLeave = async (id: string, status: string) => {
+    setLeaves(prev => prev.map(l => l.id === id ? { ...l, status } : l));
     const l = leaves.find(x => x.id === id);
     if (!l) return;
     await fetch(`/api/leaves/${id}`, {
       method: "PUT", headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ...l, status }),
     });
-    load();
   };
 
   const delLeave = async (id: string) => {
+    setLeaves(prev => prev.filter(l => l.id !== id));
     await fetch(`/api/leaves/${id}`, { method: "DELETE" });
-    load();
   };
 
   const addLeave = async () => {
@@ -62,11 +67,12 @@ export function StaffTab() {
     const date = (document.getElementById("lv-date") as HTMLInputElement)?.value;
     if (!sid || !date) return;
     const s = staff.find(x => x.id === sid);
+    const newLeave: Leave = { id: uid(), staffId: sid, staffName: s?.name || "", date, reason: "", note: "", status: "pending", createdAt: todayStr() };
+    setLeaves(prev => [newLeave, ...prev]);
     await fetch("/api/leaves", {
       method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ id: uid(), staffId: sid, staffName: s?.name || "", date, reason: "", note: "", status: "pending", createdAt: todayStr() }),
+      body: JSON.stringify(newLeave),
     });
-    load();
   };
 
   const byRole = (role: string) => staff.filter(s => s.role === role);

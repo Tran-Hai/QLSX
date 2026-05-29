@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "./ui/Button";
 import { uid, todayStr } from "@/lib/utils";
-import { INST_ITEMS } from "@/lib/constants";
+import { INST_ITEMS, KHO_INST_MAP } from "@/lib/constants";
+import { Select } from "./ui/Select";
 
 interface Project { id: string; name: string; instCfg: Record<string,number>; }
 interface InstLog { id: string; date: string; projectId: string; projectName: string; itemId: string; itemName: string; unit: string; qty: number; note: string; techStatus: string; techNote: string; }
@@ -47,7 +48,7 @@ export function InstallationTab() {
   const groups = useMemo(() => {
     const result: { project: Project; rows: {
       key: string; itemId: string; itemName: string; unit: string;
-      target: number; khoQty: number; todayQty: number; totalInst: number; remaining: number;
+      target: number; khoQty: number; khoMapped: number; combinedKho: number; todayQty: number; totalInst: number; remaining: number;
       pctDone: number; isBlocked: boolean; todayEntry?: InstLog;
     }[] }[] = [];
 
@@ -61,6 +62,11 @@ export function InstallationTab() {
         const khoQty = khoEntries
           .filter(e => e.projectId === p.id && e.itemId === itemId)
           .reduce((s, e) => s + e.qty, 0);
+        const mappedItemId = KHO_INST_MAP[itemId];
+        const mappedKhoQty = mappedItemId ? khoEntries
+          .filter(e => e.projectId === p.id && e.itemId === mappedItemId)
+          .reduce((s, e) => s + e.qty, 0) : 0;
+        const combinedKho = khoQty + mappedKhoQty;
         const totalInst = instLogs
           .filter(l => l.projectId === p.id && l.itemId === itemId)
           .reduce((s, l) => s + l.qty, 0);
@@ -70,9 +76,9 @@ export function InstallationTab() {
         const todayEntry = instLogs.find(l => l.projectId === p.id && l.itemId === itemId && l.date === date);
         const remaining = Math.max(0, target - totalInst);
         const pctDone = target > 0 ? Math.min(100, (totalInst / target) * 100) : 0;
-        const isBlocked = khoQty <= 0;
+        const isBlocked = combinedKho <= 0;
         const key = `${p.id}:${itemId}`;
-        return { key, itemId, itemName: def.label, unit: def.unit, target, khoQty, todayQty, totalInst, remaining, pctDone, isBlocked, todayEntry };
+        return { key, itemId, itemName: def.label, unit: def.unit, target, khoQty, khoMapped: mappedKhoQty, combinedKho, todayQty, totalInst, remaining, pctDone, isBlocked, todayEntry };
       });
       result.push({ project: p, rows });
     }
@@ -127,11 +133,11 @@ export function InstallationTab() {
     if (isBlocked) return <span className="il-locked" style={{color:"var(--red)", fontSize:11, fontWeight:600}}>⚠️ Chờ kho</span>;
     const val = formStatuses[key] ?? "";
     return (
-      <select className="il-sel" value={val} onChange={e => setFormStatuses(prev => ({ ...prev, [key]: e.target.value }))}>
+      <Select value={val} onChange={e => setFormStatuses(prev => ({ ...prev, [key]: e.target.value }))} style={{minWidth:90}}>
         <option value="">—</option>
         <option value="dat">✅ Đạt</option>
         <option value="chua_dat">❌ Chưa đạt</option>
-      </select>
+      </Select>
     );
   };
 
@@ -159,95 +165,89 @@ export function InstallationTab() {
             <div>Chưa có hạng mục lắp đặt. Thêm cấu hình lắp đặt trong Công trình.</div>
           </div>
         ) : (
-          <div style={{overflowX:"auto"}}>
-            <table className="pd-table">
-              <thead>
-                <tr>
-                  <th className="left" style={{minWidth:160}}>Công trình</th>
-                  <th className="left" style={{minWidth:160}}>Hạng mục</th>
-                  <th style={{minWidth:40}}>ĐVT</th>
-                  <th style={{minWidth:55}}>Kho</th>
-                  <th style={{minWidth:55}}>Hôm nay</th>
-                  <th style={{minWidth:55}}>Đã LĐ</th>
-                  <th style={{minWidth:55}}>Còn</th>
-                  <th style={{minWidth:120}}>Tiến độ</th>
-                  <th style={{minWidth:140}} colSpan={2}>Ghi KL</th>
-                  <th style={{minWidth:130}}>Đánh giá KT</th>
-                  <th style={{minWidth:160}}>Ghi chú / Yêu cầu LẠI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map(g => (
-                  <tr key={g.project.id} className="pd-group-header">
-                    <td colSpan={12} className="left">
-                      <span className="pd-ct-name">{g.project.name.toUpperCase()}</span>
-                    </td>
-                  </tr>
-                ))}
-                {groups.flatMap(g =>
-                  g.rows.map((row, ri) => {
-                    const saveKey = `save:${row.key}`;
-                    const isSaving = saving[saveKey];
-                    const err = valErrors[row.key];
-                    return (
-                      <tr key={row.key}>
-                        <td className="left" style={ri > 0 ? {paddingTop:4,paddingBottom:4} : {}}>
-                          {ri === 0 && <span className="pd-ct-name">{g.project.name.toUpperCase()}</span>}
-                        </td>
-                        <td className="left"><span className="pd-item-name">{row.itemName}</span></td>
-                        <td>{row.unit}</td>
-                        <td>{row.khoQty > 0 ? <span className="pd-num">{row.khoQty}</span> : <span style={{color:"var(--red)"}}>—</span>}</td>
-                        <td>{row.todayQty > 0 ? <span className="pd-num blue">{r2(row.todayQty)}</span> : <span style={{color:"var(--blue)", opacity:0.4}}>—</span>}</td>
-                        <td className="pd-num green">{r2(row.totalInst)}</td>
-                        <td className="pd-num warn">{r2(row.remaining)}</td>
-                        <td>
-                          <div style={{width:110, height:16, background:"rgba(255,255,255,0.06)", borderRadius:8, overflow:"hidden", margin:"0 auto"}}>
-                            <div style={{width:`${row.pctDone}%`, height:"100%", background:"var(--green)", borderRadius:8, transition:"width 0.3s"}} />
-                          </div>
-                        </td>
-                        <td>
-                          {row.isBlocked ? (
-                            <span style={{color:"var(--red)", fontSize:11, fontWeight:600, whiteSpace:"nowrap"}}>⚠️ Chờ kho</span>
-                          ) : (
-                            <input type="number" step="0.001" min="0" className="pd-input"
-                              placeholder="KL..."
-                              value={formQtys[row.key] ?? ""}
-                              onChange={e => setFormQtys(prev => ({ ...prev, [row.key]: e.target.value }))}
-                              onKeyDown={e => { if (e.key === "Enter") save(row.key); }} />
-                          )}
-                        </td>
-                        <td>
-                          {!row.isBlocked && (
-                            <button className={`pd-btn-record${isSaving ? " loading" : ""}`}
-                              disabled={isSaving || !(parseFloat(formQtys[row.key] || "0") > 0)}
-                              onClick={() => save(row.key)}
-                              title="Ghi nhận">✓</button>
-                          )}
-                        </td>
-                        <td>{statusOpts(row.key, row.isBlocked)}</td>
-                        <td>
-                          {row.isBlocked ? (
-                            <span style={{color:"var(--t3)", fontSize:11}}>—</span>
-                          ) : (
-                            <div>
-                              <input type="text" className="pd-input" style={{width:"100%"}}
-                                placeholder={formStatuses[row.key] === "chua_dat" ? "Mô tả lỗi..." : "Ghi chú"}
-                                value={formNotes[row.key] ?? ""}
-                                onChange={e => {
-                                  setFormNotes(prev => ({ ...prev, [row.key]: e.target.value }));
-                                  if (err) setValErrors(prev => ({ ...prev, [row.key]: "" }));
-                                }} />
-                              {err && <div style={{color:"var(--red)", fontSize:10, marginTop:2}}>{err}</div>}
+          groups.map(g => (
+            <div key={g.project.id} className="card mb-16">
+              <div className="flex justify-between items-center mb-12">
+                <span className="font-bold" style={{color:"var(--blue)", fontSize:15}}>{g.project.name}</span>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table className="pd-table" style={{minWidth:900}}>
+                  <thead>
+                    <tr>
+                      <th className="left" style={{minWidth:140}}>Hạng mục</th>
+                      <th style={{minWidth:40}}>ĐVT</th>
+                      <th style={{minWidth:55}}>Kho</th>
+                      <th style={{minWidth:55}}>Hôm nay</th>
+                      <th style={{minWidth:55}}>Đã LĐ</th>
+                      <th style={{minWidth:55}}>Còn</th>
+                      <th style={{minWidth:110}}>Tiến độ</th>
+                      <th style={{minWidth:130}} colSpan={2}>Ghi KL</th>
+                      <th style={{minWidth:120}}>Đánh giá KT</th>
+                      <th style={{minWidth:160}}>Ghi chú / Yêu cầu LẠI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.rows.map((row, ri) => {
+                      const saveKey = `save:${row.key}`;
+                      const isSaving = saving[saveKey];
+                      const err = valErrors[row.key];
+                      return (
+                        <tr key={row.key}>
+                          <td className="left"><span className="pd-item-name">{row.itemName}</span></td>
+                          <td>{row.unit}</td>
+                          <td>{row.combinedKho > 0 ? <span className="pd-num">{r2(row.combinedKho)}{row.khoQty === 0 && row.khoMapped > 0 ? <span style={{fontSize:9, color:"var(--purple)", marginLeft:3}}>🔄</span> : ""}</span> : <span style={{color:"var(--red)"}}>—</span>}</td>
+                          <td>{row.todayQty > 0 ? <span className="pd-num blue">{r2(row.todayQty)}</span> : <span style={{color:"var(--blue)", opacity:0.4}}>—</span>}</td>
+                          <td className="pd-num green">{r2(row.totalInst)}</td>
+                          <td className="pd-num warn">{r2(row.remaining)}</td>
+                          <td>
+                            <div style={{width:100, height:16, background:"rgba(0,0,0,0.04)", borderRadius:8, overflow:"hidden", margin:"0 auto"}}>
+                              <div style={{width:`${row.pctDone}%`, height:"100%", background:"var(--green)", borderRadius:8, transition:"width 0.3s"}} />
                             </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </td>
+                          <td>
+                            {row.isBlocked ? (
+                              <span className="il-locked">⚠️ Chờ kho</span>
+                            ) : (
+                              <input type="number" step="0.001" min="0" className="pd-input"
+                                placeholder="KL..."
+                                value={formQtys[row.key] ?? ""}
+                                onChange={e => setFormQtys(prev => ({ ...prev, [row.key]: e.target.value }))}
+                                onKeyDown={e => { if (e.key === "Enter") save(row.key); }} />
+                            )}
+                          </td>
+                          <td>
+                            {!row.isBlocked && (
+                              <button className={`pd-btn-record${isSaving ? " loading" : ""}`}
+                                disabled={isSaving || !(parseFloat(formQtys[row.key] || "0") > 0)}
+                                onClick={() => save(row.key)}
+                                title="Ghi nhận">✓</button>
+                            )}
+                          </td>
+                          <td>{statusOpts(row.key, row.isBlocked)}</td>
+                          <td>
+                            {row.isBlocked ? (
+                              <span style={{color:"var(--t3)", fontSize:11}}>—</span>
+                            ) : (
+                              <div>
+                                <input type="text" className="pd-input" style={{width:"100%"}}
+                                  placeholder={formStatuses[row.key] === "chua_dat" ? "Mô tả lỗi..." : "Ghi chú"}
+                                  value={formNotes[row.key] ?? ""}
+                                  onChange={e => {
+                                    setFormNotes(prev => ({ ...prev, [row.key]: e.target.value }));
+                                    if (err) setValErrors(prev => ({ ...prev, [row.key]: "" }));
+                                  }} />
+                                {err && <div style={{color:"var(--red)", fontSize:10, marginTop:2}}>{err}</div>}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

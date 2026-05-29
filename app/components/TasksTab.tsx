@@ -28,6 +28,7 @@ export function TasksTab() {
   // New task form state
   const [fType, setFType] = useState("");
   const [fDept, setFDept] = useState("");
+  const [fAssignedTo, setFAssignedTo] = useState("");
   const [fPriority, setFPriority] = useState("normal");
   const [fProject, setFProject] = useState("");
   const [fDueDate, setFDueDate] = useState(todayStr());
@@ -62,17 +63,17 @@ export function TasksTab() {
   }, [tasks, viewTab, filter]);
 
   const save = async (t: TaskItem) => {
+    setTasks(prev => prev.map(x => x.id === t.id ? t : x));
+    setEditing(null);
     await fetch("/api/tasks", {
       method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(t),
     });
-    setEditing(null);
-    load();
   };
 
   const del = async (id: string) => {
     if (!confirm("Xoá công tác này?")) return;
+    setTasks(prev => prev.filter(x => x.id !== id));
     await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-    load();
   };
 
   const submitTask = async () => {
@@ -80,20 +81,22 @@ export function TasksTab() {
     setFTypeErr(false);
     const t = TASK_TYPES.find(x => x.id === fType);
     const p = projects.find(x => x.id === fProject);
+    const s = staff.find(x => x.id === fAssignedTo);
     const dept = t?.dept || fDept || "ql";
+    const newTask: TaskItem = {
+      id: uid(), typeId: fType, name: t?.label || "", dept, icon: t?.icon || "📌",
+      projectId: fProject, projectName: p?.name || "",
+      assignedTo: fAssignedTo, assignedName: s?.name || "", dueDate: fDueDate,
+      priority: fPriority, note: fNote, status: "todo",
+      completedDate: "", createdAt: todayStr(),
+    };
+    setTasks(prev => [newTask, ...prev]);
+    setFType(""); setFDept(""); setFAssignedTo(""); setFPriority("normal"); setFProject("");
+    setFDueDate(todayStr()); setFNote("");
     await fetch("/api/tasks", {
       method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        id: uid(), typeId: fType, name: t?.label || "", dept, icon: t?.icon || "📌",
-        projectId: fProject, projectName: p?.name || "",
-        assignedTo: "", assignedName: "", dueDate: fDueDate,
-        priority: fPriority, note: fNote, status: "todo",
-        completedDate: "", createdAt: todayStr(),
-      }),
+      body: JSON.stringify(newTask),
     });
-    setFType(""); setFDept(""); setFPriority("normal"); setFProject("");
-    setFDueDate(todayStr()); setFNote("");
-    load();
   };
 
   const groupedTypes = useMemo(() => {
@@ -154,10 +157,10 @@ export function TasksTab() {
               {fTypeErr && <div style={{color:"var(--red)", fontSize:11, marginTop:4}}>Vui lòng chọn loại công tác</div>}
             </div>
             <div>
-              <label>Giao cho</label>
-              <Select value={fDept} onChange={e => setFDept(e.target.value)}>
-                <option value="">— Chưa phân công —</option>
-                {DEPARTMENTS.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
+              <label>Giao cho <span className="ts-req">*</span></label>
+              <Select value={fAssignedTo} onChange={e => setFAssignedTo(e.target.value)}>
+                <option value="">— Chọn nhân viên —</option>
+                {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
             <div>
@@ -189,7 +192,7 @@ export function TasksTab() {
           </div>
           <div className="ts-actions">
             <Button onClick={submitTask}>✓ Giao việc</Button>
-            <Button variant="ghost" onClick={() => { setFType(""); setFDept(""); setFPriority("normal"); setFProject(""); setFDueDate(todayStr()); setFNote(""); setFTypeErr(false); }}>Hủy</Button>
+            <Button variant="ghost" onClick={() => { setFType(""); setFDept(""); setFAssignedTo(""); setFPriority("normal"); setFProject(""); setFDueDate(todayStr()); setFNote(""); setFTypeErr(false); }}>Hủy</Button>
           </div>
         </div>
       </div>

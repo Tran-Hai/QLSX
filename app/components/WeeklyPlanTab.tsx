@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
+import { Select } from "./ui/Select";
 import { getMon, fmtDate, addDays, weekRangeStr, todayStr, uid } from "@/lib/utils";
 import { ALL_ITEMS, PROD_ITEMS, INST_ITEMS } from "@/lib/constants";
 
@@ -34,6 +35,8 @@ export function WeeklyPlanTab() {
   const [leaveStaff, setLeaveStaff] = useState("");
   const [leaveDate, setLeaveDate] = useState(todayStr());
   const [leaveReason, setLeaveReason] = useState("");
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const MONTHLY_LEAVE_QUOTA = 4;
 
   const weekDates = useMemo(() => Array.from({length:7}, (_,i) => addDays(mon, i)), [mon]);
   const dayNames = ["T2","T3","T4","T5","T6","T7","CN"];
@@ -46,8 +49,9 @@ export function WeeklyPlanTab() {
       fetch("/api/inst_logs").then(r=>r.json()),
       fetch("/api/kho_entries").then(r=>r.json()),
       fetch("/api/staff").then(r=>r.json()),
-    ]).then(([p, pl, il, k, s]) => {
-      setProjects(p); setProdLogs(pl); setInstLogs(il); setKho(k); setStaff(s);
+      fetch("/api/leaves").then(r=>r.json()),
+    ]).then(([p, pl, il, k, s, l]) => {
+      setProjects(p); setProdLogs(pl); setInstLogs(il); setKho(k); setStaff(s); setLeaves(l);
     }).catch(()=>{});
   }, []);
   useEffect(loadAll, [loadAll]);
@@ -212,6 +216,15 @@ export function WeeklyPlanTab() {
     return ldPlanItems.filter(r => r.deadline && r.deadline < today);
   }, [ldPlanItems, today]);
 
+  // ===== MONTHLY FLEXIBLE LEAVE =====
+  const currentMonth = todayStr().slice(0, 7); // YYYY-MM
+  const monthLeavesUsed = useMemo(() => {
+    return leaves.filter(l =>
+      l.date && l.date.startsWith(currentMonth) && l.status !== "cancelled"
+    ).length;
+  }, [leaves, currentMonth]);
+  const leaveRemaining = Math.max(0, MONTHLY_LEAVE_QUOTA - monthLeavesUsed);
+
   // ===== LEAVE REGISTRATION =====
   const submitLeave = async () => {
     if (!leaveStaff || !leaveDate) return;
@@ -253,8 +266,13 @@ export function WeeklyPlanTab() {
         <Button size="sm" variant="ghost" onClick={() => setMon(getMon(new Date()))}>Tuần này</Button>
         <Button style={{marginLeft:"auto"}} onClick={() => setShowLeaveModal(true)}>📋 Đăng ký nghỉ phép</Button>
       </div>
-      <div style={{fontSize:12, color:"var(--t2)", marginBottom:20}}>
-        📌 Lịch làm việc: <strong>6 ngày/tuần</strong>. Nếu có việc cần nghỉ, đăng ký trước để lãnh đạo sắp xếp kế hoạch.
+      <div style={{fontSize:12, color:"var(--t2)", marginBottom:20, display:"flex", alignItems:"center", gap:16, flexWrap:"wrap"}}>
+        <span>📌 Lịch làm việc: <strong>7 ngày/tuần</strong>.</span>
+        <span className="wp-leave-tracker">
+          🏖️ Tháng này: <strong style={{color: leaveRemaining <= 0 ? "var(--red)" : "var(--green)"}}>{monthLeavesUsed}/{MONTHLY_LEAVE_QUOTA}</strong> ngày nghỉ linh động
+          {leaveRemaining > 0 && <span style={{color:"var(--t2)"}}> (còn {leaveRemaining})</span>}
+          {leaveRemaining <= 0 && <span style={{color:"var(--red)", marginLeft:4}}>⚠️ Hết phép!</span>}
+        </span>
       </div>
 
       {/* ===== BLOCK 1: KẾ HOẠCH SẢN XUẤT ===== */}
@@ -269,7 +287,7 @@ export function WeeklyPlanTab() {
           <div style={{display:"flex", alignItems:"center", gap:10, flexWrap:"wrap", marginBottom:8}}>
             <span className="wp-badge blue">👥 Cố định {prodPersonnel} người</span>
           </div>
-          <div className="wp-note">Làm 6 ngày/tuần – nghỉ lễ theo lịch</div>
+          <div className="wp-note">Làm 7 ngày/tuần – nghỉ lễ theo lịch, tối đa 4 ngày linh động/tháng</div>
 
           <div className="wp-table-wrap" style={{marginTop:12}}>
             <table className="wp-table">
@@ -560,23 +578,23 @@ export function WeeklyPlanTab() {
             <div className="frm-row">
               <div>
                 <label>Công trình</label>
-                <select className="sel" value={assignProject} onChange={e => { setAssignProject(e.target.value); setAssignItem(""); }}>
+                <Select value={assignProject} onChange={e => { setAssignProject(e.target.value); setAssignItem(""); }}>
                   <option value="">-- Tất cả --</option>
                   {projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label>Hạng mục lắp đặt</label>
-                <select className="sel" value={assignItem} onChange={e => setAssignItem(e.target.value)}>
+                <Select value={assignItem} onChange={e => setAssignItem(e.target.value)}>
                   <option value="">-- Chọn --</option>
                   {filteredItems.map(a => (
                     <option key={`${a.projectId}:${a.itemId}`} value={a.itemId}>
                       {a.projectName} – {a.itemName}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
             {filteredItems.length === 0 && (
@@ -598,12 +616,12 @@ export function WeeklyPlanTab() {
             <div className="frm-row">
               <div>
                 <label>Nhân sự</label>
-                <select className="sel" value={leaveStaff} onChange={e => setLeaveStaff(e.target.value)}>
+                <Select value={leaveStaff} onChange={e => setLeaveStaff(e.target.value)}>
                   <option value="">-- Chọn --</option>
                   {staff.map(s => (
                     <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label>Ngày nghỉ</label>

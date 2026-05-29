@@ -158,89 +158,89 @@ export function ProductionTab() {
             <div>Chưa có kế hoạch sản xuất. Thêm mục tiêu sản xuất trong Công trình để bắt đầu.</div>
           </div>
         ) : (
-          <div style={{overflowX:"auto"}}>
-            <table className="pd-table">
-              <thead>
-                <tr>
-                  <th className="left" style={{minWidth:200}}>Công trình / Hạng mục</th>
-                  <th style={{minWidth:45}}>ĐVT</th>
-                  <th style={{minWidth:60}}>KL cần</th>
-                  <th style={{minWidth:70}}>Tổng đã SX</th>
-                  <th style={{minWidth:65}}>Hôm nay</th>
-                  <th style={{minWidth:65}}>Còn lại</th>
-                  <th style={{minWidth:140}} colSpan={2}>Ghi nhận hôm nay</th>
-                  <th style={{minWidth:120}}>Nhập kho (SX xong → kho)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map(group => (
-                  <tr key={group.projectId} className="pd-group-header">
-                    <td colSpan={9} className="left">
-                      <span className="pd-ct-name">{group.projectName}</span>
-                      {group.location && (
-                        <span className="pd-location" style={{marginLeft:12}}>
-                          <span className="pd-pin">📍</span> {group.location}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {groups.flatMap(group =>
-                  group.rows.map((row, ri) => {
-                    const inputKey = `prod:${row.itemId}`;
-                    const khoKey = `kho:${row.itemId}`;
-                    const isSaving = saving[inputKey];
-                    const isKhoSaving = saving[khoKey];
-                    return (
-                      <tr key={`${row.projectId}-${row.itemId}`}>
-                        <td className="left">
-                          <span className="pd-item-name">{row.itemName}</span>
-                        </td>
-                        <td>{row.unit}</td>
-                        <td className="pd-num">{row.target}</td>
-                        <td className="pd-num green">{r2(row.totalProd)}</td>
-                        <td className="pd-num blue">{r2(row.todayProd)}</td>
-                        <td className="pd-num warn">{r2(row.remaining)}</td>
-                        <td>
-                          <div className="pd-input-wrap">
-                            <input type="number" step="0.001" min="0"
-                              className="pd-input"
-                              placeholder="SX..."
-                              value={inputs[row.itemId] ?? ""}
-                              onChange={e => setInputs(prev => ({ ...prev, [row.itemId]: e.target.value }))}
-                              onKeyDown={e => {
-                                if (e.key === "Enter") saveProd(row.itemId, row.itemName, row.unit);
-                              }} />
-                          </div>
-                        </td>
-                        <td>
-                          <button className={`pd-btn-record${isSaving ? " loading" : ""}`}
-                            disabled={isSaving || !(parseFloat(inputs[row.itemId] || "0") > 0)}
-                            onClick={() => saveProd(row.itemId, row.itemName, row.unit)}
-                            title="Ghi nhận">✓</button>
-                        </td>
-                        <td>
-                          {row.khoRecorded ? (
-                            <span className="pd-kho-done">
-                              <span className="pd-kho-check">✓</span> Đã nhập kho
-                            </span>
-                          ) : row.todayProd > 0 ? (
-                            <button className="pd-kho-btn"
-                              disabled={isKhoSaving}
-                              onClick={() => doNhapKho(row.itemId)}>
-                              {isKhoSaving ? "⏳" : "Nhập kho"}
-                            </button>
-                          ) : (
-                            <span style={{color:"var(--t3)", fontSize:11}}>—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+          groups.map(group => (
+            <div key={group.projectId} className="card mb-16">
+              <div className="flex justify-between items-center mb-12">
+                <div>
+                  <span className="font-bold" style={{color:"var(--blue)", fontSize:15}}>{group.projectName}</span>
+                  {group.location && (
+                    <span className="text-t2" style={{marginLeft:12, fontSize:12}}>
+                      📍 {group.location}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table className="pd-table" style={{minWidth:800}}>
+                  <thead>
+                    <tr>
+                      <th className="left" style={{minWidth:140}}>Hạng mục</th>
+                      <th style={{minWidth:45}}>ĐVT</th>
+                      <th style={{minWidth:60}}>KL cần</th>
+                      <th style={{minWidth:70}}>Tổng đã SX</th>
+                      <th style={{minWidth:65}}>Hôm nay</th>
+                      <th style={{minWidth:65}}>Còn lại</th>
+                      <th style={{minWidth:140}} colSpan={2}>Ghi nhận hôm nay</th>
+                      <th style={{minWidth:120}}>Nhập kho (SX → kho)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.rows.map((row, ri) => {
+                      const inputKey = `prod:${row.itemId}`;
+                      const khoKey = `kho:${row.itemId}`;
+                      const isSaving = saving[inputKey];
+                      const isKhoSaving = saving[khoKey];
+                      return (
+                        <tr key={`${row.projectId}-${row.itemId}`}>
+                          <td className="left">
+                            <span className="pd-item-name">{row.itemName}</span>
+                          </td>
+                          <td>{row.unit}</td>
+                          <td className="pd-num">{row.target}</td>
+                          <td className="pd-num green">{r2(row.totalProd)}</td>
+                          <td className="pd-num blue">{r2(row.todayProd)}</td>
+                          <td className="pd-num warn">{r2(row.remaining)}</td>
+                          <td>
+                            <div className="pd-input-wrap">
+                              <input type="number" step="0.001" min="0"
+                                className="pd-input"
+                                placeholder="SX..."
+                                value={inputs[row.itemId] ?? ""}
+                                onChange={e => setInputs(prev => ({ ...prev, [row.itemId]: e.target.value }))}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") saveProd(row.itemId, row.itemName, row.unit);
+                                }} />
+                            </div>
+                          </td>
+                          <td>
+                            <button className={`pd-btn-record${isSaving ? " loading" : ""}`}
+                              disabled={isSaving || !(parseFloat(inputs[row.itemId] || "0") > 0)}
+                              onClick={() => saveProd(row.itemId, row.itemName, row.unit)}
+                              title="Ghi nhận">✓</button>
+                          </td>
+                          <td>
+                            {row.khoRecorded ? (
+                              <span className="pd-kho-done">
+                                <span className="pd-kho-check">✓</span> Đã nhập kho
+                              </span>
+                            ) : row.todayProd > 0 ? (
+                              <button className="pd-kho-btn"
+                                disabled={isKhoSaving}
+                                onClick={() => doNhapKho(row.itemId)}>
+                                {isKhoSaving ? "⏳" : "Nhập kho"}
+                              </button>
+                            ) : (
+                              <span style={{color:"var(--t3)", fontSize:11}}>—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
