@@ -7,6 +7,7 @@ import { ALL_ITEMS, KHO_INST_MAP } from "@/lib/constants";
 interface Project { id: string; name: string; location: string; prodTargets: Record<string,number>; instCfg: Record<string,number>; }
 interface KhoEntry { id: string; projectId: string; itemId: string; qty: number; date: string; }
 interface InstLog { id: string; projectId: string; itemId: string; qty: number; }
+interface PurchaseOrder { id: string; projectId: string; itemId: string; supplier: string; totalQty: number; deliveredQty: number; status: string; }
 
 function r2(v: number) { return Math.round(v * 100) / 100; }
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
@@ -15,6 +16,7 @@ export function WarehouseTab() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [khoEntries, setKhoEntries] = useState<KhoEntry[]>([]);
   const [instLogs, setInstLogs] = useState<InstLog[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [selProject, setSelProject] = useState("");
 
   const load = useCallback(() => {
@@ -22,11 +24,23 @@ export function WarehouseTab() {
       fetch("/api/projects").then(r=>r.json()),
       fetch("/api/kho_entries").then(r=>r.json()),
       fetch("/api/inst_logs").then(r=>r.json()),
-    ]).then(([p, k, i]) => {
-      setProjects(p); setKhoEntries(k); setInstLogs(i);
+      fetch("/api/purchase_orders").then(r=>r.json()),
+    ]).then(([p, k, i, po]) => {
+      setProjects(p); setKhoEntries(k); setInstLogs(i); setPurchaseOrders(po);
     }).catch(()=>{});
   }, []);
   useEffect(load, [load]);
+
+  // Build lookup: which project+item has an active purchase order
+  const poLookup = useMemo(() => {
+    const s = new Set<string>();
+    for (const po of purchaseOrders) {
+      if (po.status !== "da_giao_du") {
+        s.add(`${po.projectId}:${po.itemId}`);
+      }
+    }
+    return s;
+  }, [purchaseOrders]);
 
   const filteredProjects = useMemo(() =>
     selProject ? projects.filter(p => p.id === selProject) : projects,
@@ -46,7 +60,7 @@ export function WarehouseTab() {
       const processed = new Set<string>();
       const items: {
         itemId: string; itemName: string; unit: string;
-        source: "Tự SX" | "Mua ngoài";
+        source: "Tự SX" | "Mua ngoài" | "Đặt mua";
         target: number; khoQty: number; instQty: number; tonKho: number;
         pctInstalled: number; pctTonKho: number; pctChua: number;
         status: { text: string; cls: string };
@@ -153,9 +167,11 @@ export function WarehouseTab() {
           status = { text: "📦 Trong kho", cls: "instock" };
         }
 
+        const hasPO = poLookup.has(`${p.id}:${instId}`);
+        const sourceLabel = isMuaNgoai ? (hasPO ? "Đặt mua" : "Mua ngoài") : "Tự SX";
         items.push({
           itemId: instId, itemName: instDef.label, unit: instDef.unit,
-          source: isMuaNgoai ? "Mua ngoài" : "Tự SX",
+          source: sourceLabel,
           target: instTarget, khoQty: r2(khoQty), instQty: r2(instQty), tonKho: r2(tonKho),
           pctInstalled: clamp(pctInstalled, 0, 100),
           pctTonKho: clamp(pctTonKho, 0, 100),
@@ -166,7 +182,7 @@ export function WarehouseTab() {
 
       return { project: p, items };
     });
-  }, [filteredProjects, khoEntries, instLogs]);
+  }, [filteredProjects, khoEntries, instLogs, poLookup]);
 
   const allEmpty = projectRows.every(g => g.items.length === 0);
 
@@ -239,8 +255,8 @@ export function WarehouseTab() {
                       <span className="wh-item-name">{item.itemName}</span>
                     </td>
                     <td>
-                      <span className={`wh-source ${item.source === "Tự SX" ? "sx" : "mua"}`}>
-                        {item.source}
+                      <span className={`wh-source ${item.source === "Tự SX" ? "sx" : item.source === "Đặt mua" ? "po" : "mua"}`}>
+                        {item.source === "Đặt mua" ? "\u{1F4E6} \u0110\u1EB7t mua" : item.source}
                       </span>
                     </td>
                     <td className="wh-num">{item.target} {item.unit}</td>

@@ -106,6 +106,22 @@ export const appSettings = pgTable("app_settings", {
   updatedAt: text("updated_at").notNull().default(""),
 });
 
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().default(""),
+  projectName: text("project_name").notNull().default(""),
+  itemId: text("item_id").notNull().default(""),
+  itemName: text("item_name").notNull().default(""),
+  unit: text("unit").notNull().default(""),
+  supplier: text("supplier").notNull().default(""),
+  totalQty: real("total_qty").notNull().default(0),
+  deliveredQty: real("delivered_qty").notNull().default(0),
+  expectedDate: text("expected_date").notNull().default(""),
+  note: text("note").notNull().default(""),
+  status: text("status").notNull().default("cho_bao_gia"),
+  createdAt: text("created_at").notNull().default(""),
+});
+
 export const activityLogs = pgTable("activity_logs", {
   id: text("id").primaryKey(),
   date: text("date").notNull().default(""),

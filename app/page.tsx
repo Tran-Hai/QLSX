@@ -13,6 +13,7 @@ import { DailyLaborTab } from "./components/DailyLaborTab";
 import { InstallationTab } from "./components/InstallationTab";
 import { WeeklyPlanTab } from "./components/WeeklyPlanTab";
 import { ActivityLogTab } from "./components/ActivityLogTab";
+import { PurchaseTab } from "./components/PurchaseTab";
 const SIDEBAR_ITEMS = [
   { id: "dashboard", icon: "▦", label: "Tổng quan" },
   { id: "projects", icon: "🏗", label: "Công trình" },
@@ -25,13 +26,14 @@ const SIDEBAR_ITEMS = [
   { id: "daily_labor", icon: "📋", label: "Công nhật" },
   { id: "installation", icon: "🔧", label: "Lắp đặt" },
   { id: "weekly_plan", icon: "📈", label: "KH tuần" },
+  { id: "purchase", icon: "🛒", label: "Đặt hàng" },
   { id: "activity_log", icon: "📜", label: "Nhật ký" },
 ];
 
 const SECTIONS = [
   { label: "Chính", items: ["dashboard", "projects", "staff", "tasks"] },
   { label: "Kế hoạch", items: ["calendar", "report", "weekly_plan"] },
-  { label: "Sản xuất", items: ["production", "warehouse", "daily_labor", "installation"] },
+  { label: "Sản xuất", items: ["production", "warehouse", "purchase", "daily_labor", "installation"] },
   { label: "Theo dõi", items: ["activity_log"] },
 ];
 
@@ -47,6 +49,7 @@ const TabComponent: Record<string, React.ComponentType> = {
   daily_labor: DailyLaborTab,
   installation: InstallationTab,
   weekly_plan: WeeklyPlanTab,
+  purchase: PurchaseTab,
   activity_log: ActivityLogTab,
 };
 
