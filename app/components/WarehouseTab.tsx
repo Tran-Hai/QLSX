@@ -31,13 +31,11 @@ export function WarehouseTab() {
   }, []);
   useEffect(load, [load]);
 
-  // Build lookup: which project+item has an active purchase order
+  // Build lookup: which project+item has any purchase order
   const poLookup = useMemo(() => {
     const s = new Set<string>();
     for (const po of purchaseOrders) {
-      if (po.status !== "da_giao_du") {
-        s.add(`${po.projectId}:${po.itemId}`);
-      }
+      s.add(`${po.projectId}:${po.itemId}`);
     }
     return s;
   }, [purchaseOrders]);

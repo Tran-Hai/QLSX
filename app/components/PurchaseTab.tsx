@@ -208,10 +208,20 @@ export function PurchaseTab() {
                     </span>
                   </td>
                   <td>
-                    <button className={`pd-btn-record${isSaving ? " loading" : ""}`}
-                      disabled={isDone || isSaving || !(parseFloat(inputVal) > 0)}
-                      onClick={() => confirmDelivery(order.id)}
-                      title="Ghi nhận giao hàng">✓ Ghi nhận</button>
+                    {isDone ? (
+                      <span style={{color:"var(--green)", fontSize:11, fontWeight:600}}>✅ Đã giao</span>
+                    ) : (
+                      <button className={`po-confirm-btn${isSaving ? " loading" : ""}`}
+                        disabled={isSaving || !(parseFloat(inputVal) > 0)}
+                        onClick={() => confirmDelivery(order.id)}
+                        title="Ghi nhận giao hàng">
+                        {isSaving ? (
+                          <span className="po-spinner" />
+                        ) : (
+                          <>✓ Ghi nhận</>
+                        )}
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
