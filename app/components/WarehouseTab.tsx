@@ -178,9 +178,51 @@ export function WarehouseTab() {
         });
       }
 
+      // Phase 3: include items from purchase orders not yet shown
+      for (const po of purchaseOrders) {
+        if (po.projectId !== p.id) continue;
+        if (processed.has(po.itemId)) continue;
+        processed.add(po.itemId);
+        const def = ALL_ITEMS.find(x => x.id === po.itemId);
+        if (!def) continue;
+
+        const khoQty = khoEntries
+          .filter(e => e.projectId === p.id && e.itemId === po.itemId)
+          .reduce((s, e) => s + e.qty, 0);
+
+        const instQty = instLogs
+          .filter(l => l.projectId === p.id && l.itemId === po.itemId)
+          .reduce((s, l) => s + l.qty, 0);
+
+        const tonKho = Math.max(0, khoQty - instQty);
+        const target = po.totalQty;
+        const pctInstalled = target > 0 ? (instQty / target) * 100 : 0;
+        const pctTonKho = target > 0 ? (tonKho / target) * 100 : 0;
+        const pctChua = target > 0 ? Math.max(0, 100 - pctInstalled - pctTonKho) : 100;
+
+        let status: { text: string; cls: string } = { text: "⏳ Chờ nhập kho", cls: "waiting" };
+        if (instQty > 0 && instQty >= target) {
+          status = { text: "✅ Hoàn thành", cls: "installing" };
+        } else if (instQty > 0) {
+          status = { text: "🔧 Đang lắp đặt", cls: "installing" };
+        } else if (khoQty > 0) {
+          status = { text: "📦 Trong kho", cls: "instock" };
+        }
+
+        items.push({
+          itemId: po.itemId, itemName: def.label, unit: def.unit,
+          source: "Đặt mua",
+          target, khoQty: r2(khoQty), instQty: r2(instQty), tonKho: r2(tonKho),
+          pctInstalled: clamp(pctInstalled, 0, 100),
+          pctTonKho: clamp(pctTonKho, 0, 100),
+          pctChua: clamp(pctChua, 0, 100),
+          status,
+        });
+      }
+
       return { project: p, items };
     });
-  }, [filteredProjects, khoEntries, instLogs, poLookup]);
+  }, [filteredProjects, khoEntries, instLogs, poLookup, purchaseOrders]);
 
   const allEmpty = projectRows.every(g => g.items.length === 0);
 
