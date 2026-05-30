@@ -88,13 +88,14 @@ export function ProductionTab() {
 
   const todayTotal = rows.reduce((s, r) => s + r.todayProd, 0);
 
-  const saveProd = async (itemId: string, itemName: string, unit: string) => {
-    const qty = parseFloat(inputs[itemId] || "0");
+  const saveProd = async (projectId: string, itemId: string, itemName: string, unit: string) => {
+    const inputKey = `${projectId}:${itemId}`;
+    const qty = parseFloat(inputs[inputKey] || "0");
     if (qty <= 0) return;
-    const proj = projects.find(p => p.id === rows.find(r => r.itemId === itemId)?.projectId);
+    const proj = projects.find(p => p.id === projectId);
     if (!proj) return;
-    const key = `prod:${itemId}`;
-    setSaving(prev => ({ ...prev, [key]: true }));
+    const saveKey = `prod:${inputKey}`;
+    setSaving(prev => ({ ...prev, [saveKey]: true }));
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
     try {
@@ -102,7 +103,7 @@ export function ProductionTab() {
         fetch("/api/prod_logs", {
           method: "POST", headers: {"Content-Type":"application/json"},
           body: JSON.stringify({
-            id: uid(), date, projectId: proj.id, projectName: proj.name,
+            id: uid(), date, projectId, projectName: proj.name,
             itemId, itemName, unit, qty, note: "", createdAt: todayStr(),
           }),
         }),
@@ -110,7 +111,7 @@ export function ProductionTab() {
           method: "POST", headers: {"Content-Type":"application/json"},
           body: JSON.stringify({
             id: uid(), date, time: timeStr,
-            projectId: proj.id, projectName: proj.name,
+            projectId, projectName: proj.name,
             itemId, itemName, unit, qty,
             action: "nhap_kho", actionLabel: "\u{1F7E6} Nh\u1EADp kho",
             actorName: "", actorRole: "",
@@ -119,30 +120,28 @@ export function ProductionTab() {
         }),
       ]);
       if (!r1.ok || !r2.ok) throw new Error("Save failed");
-      setInputs(prev => ({ ...prev, [itemId]: "" }));
+      setInputs(prev => ({ ...prev, [inputKey]: "" }));
       await load();
     } finally {
-      setSaving(prev => ({ ...prev, [key]: false }));
+      setSaving(prev => ({ ...prev, [saveKey]: false }));
     }
   };
 
-  const doNhapKho = async (itemId: string) => {
-    const proj = projects.find(p => p.id === rows.find(r => r.itemId === itemId)?.projectId);
-    if (!proj) return;
+  const doNhapKho = async (projectId: string, itemId: string) => {
     const todayProd = prodLogs
-      .filter(l => l.projectId === proj.id && l.itemId === itemId && l.date === date)
+      .filter(l => l.projectId === projectId && l.itemId === itemId && l.date === date)
       .reduce((s, l) => s + l.qty, 0);
     if (todayProd <= 0) return;
-    const key = `kho:${itemId}`;
-    setSaving(prev => ({ ...prev, [key]: true }));
+    const saveKey = `kho:${projectId}:${itemId}`;
+    setSaving(prev => ({ ...prev, [saveKey]: true }));
     try {
       await fetch("/api/kho_entries", {
         method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ id: uid(), date, projectId: proj.id, itemId, qty: todayProd, createdAt: todayStr() }),
+        body: JSON.stringify({ id: uid(), date, projectId, itemId, qty: todayProd, createdAt: todayStr() }),
       });
       await load();
     } finally {
-      setSaving(prev => ({ ...prev, [key]: false }));
+      setSaving(prev => ({ ...prev, [saveKey]: false }));
     }
   };
 
@@ -202,12 +201,13 @@ export function ProductionTab() {
                   </thead>
                   <tbody>
                     {group.rows.map((row, ri) => {
-                      const inputKey = `prod:${row.itemId}`;
-                      const khoKey = `kho:${row.itemId}`;
-                      const isSaving = saving[inputKey];
+                      const inputKey = `${row.projectId}:${row.itemId}`;
+                      const saveKey = `prod:${inputKey}`;
+                      const khoKey = `kho:${row.projectId}:${row.itemId}`;
+                      const isSaving = saving[saveKey];
                       const isKhoSaving = saving[khoKey];
                       return (
-                        <tr key={`${row.projectId}-${row.itemId}`}>
+                        <tr key={inputKey}>
                           <td className="left">
                             <span className="pd-item-name">{row.itemName}</span>
                           </td>
@@ -221,17 +221,17 @@ export function ProductionTab() {
                               <input type="number" step="0.001" min="0"
                                 className="pd-input"
                                 placeholder="SX..."
-                                value={inputs[row.itemId] ?? ""}
-                                onChange={e => setInputs(prev => ({ ...prev, [row.itemId]: e.target.value }))}
+                                value={inputs[inputKey] ?? ""}
+                                onChange={e => setInputs(prev => ({ ...prev, [inputKey]: e.target.value }))}
                                 onKeyDown={e => {
-                                  if (e.key === "Enter") saveProd(row.itemId, row.itemName, row.unit);
+                                  if (e.key === "Enter") saveProd(row.projectId, row.itemId, row.itemName, row.unit);
                                 }} />
                             </div>
                           </td>
                           <td>
                             <button className={`pd-btn-record${isSaving ? " loading" : ""}`}
-                              disabled={isSaving || !(parseFloat(inputs[row.itemId] || "0") > 0)}
-                              onClick={() => saveProd(row.itemId, row.itemName, row.unit)}
+                              disabled={isSaving || !(parseFloat(inputs[inputKey] || "0") > 0)}
+                              onClick={() => saveProd(row.projectId, row.itemId, row.itemName, row.unit)}
                               title="Ghi nhận">✓</button>
                           </td>
                           <td>
@@ -242,7 +242,7 @@ export function ProductionTab() {
                             ) : row.todayProd > 0 ? (
                               <button className="pd-kho-btn"
                                 disabled={isKhoSaving}
-                                onClick={() => doNhapKho(row.itemId)}>
+                                onClick={() => doNhapKho(row.projectId, row.itemId)}>
                                 {isKhoSaving ? "⏳" : "Nhập kho"}
                               </button>
                             ) : (
