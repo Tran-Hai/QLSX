@@ -461,12 +461,12 @@ tr:hover td { background: rgba(0,0,0,0.02); }
 @media (max-width: 600px) {
   .app-sidebar {
     display: flex;
-    transform: translateX(-100%);
-    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    left: -260px;
+    transition: left 0.25s cubic-bezier(0.4,0,0.2,1);
     z-index: 450;
     width: 260px;
   }
-  .app-sidebar.mobile-open { transform: translateX(0); }
+  .app-sidebar.mobile-open { left: 0; }
   .app-main { margin-left: 0; width: 100%; padding: 16px; padding-top: 72px; }
   .card-row { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr 1fr; }
