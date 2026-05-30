@@ -1188,6 +1188,14 @@ tr:hover td { background: rgba(0,0,0,0.02); }
   padding: 40px; text-align: center; color: var(--t3); font-size: 13px;
 }
 
+/* ===== ACTIVITY LOG ===== */
+.al-action {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+}
+.al-action.nhap_kho { background: var(--blue-bg); color: var(--blue); }
+.al-action.ra_cong_truong { background: rgba(34,197,94,0.1); color: rgb(22,163,74); }
+
 /* ===== TASKS ===== */
 .ts-form {
   border: 1px solid var(--blue);

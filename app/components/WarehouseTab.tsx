@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Select } from "./ui/Select";
-import { ALL_ITEMS, PROD_ITEMS } from "@/lib/constants";
+import { ALL_ITEMS, KHO_INST_MAP } from "@/lib/constants";
 
 interface Project { id: string; name: string; location: string; prodTargets: Record<string,number>; instCfg: Record<string,number>; }
 interface KhoEntry { id: string; projectId: string; itemId: string; qty: number; date: string; }
@@ -33,53 +33,136 @@ export function WarehouseTab() {
   [projects, selProject]);
 
   const projectRows = useMemo(() => {
+    // Build reverse map: production item ID → [installation item IDs that consume it]
+    const reverseInstMap: Record<string, string[]> = {};
+    for (const [instId, prodId] of Object.entries(KHO_INST_MAP)) {
+      if (!reverseInstMap[prodId]) reverseInstMap[prodId] = [];
+      reverseInstMap[prodId].push(instId);
+    }
+
     return filteredProjects.map(p => {
-      const allTargets: Record<string,number> = {};
       const instCfg = p.instCfg || {};
       const prodTargets = p.prodTargets || {};
-      const keys = new Set([...Object.keys(instCfg), ...Object.keys(prodTargets)]);
-      for (const k of keys) {
-        allTargets[k] = Math.max(instCfg[k] || 0, prodTargets[k] || 0);
+      const processed = new Set<string>();
+      const items: {
+        itemId: string; itemName: string; unit: string;
+        source: "Tự SX" | "Mua ngoài";
+        target: number; khoQty: number; instQty: number; tonKho: number;
+        pctInstalled: number; pctTonKho: number; pctChua: number;
+        status: { text: string; cls: string };
+      }[] = [];
+
+      // Phase 1: process production items (self-produced → merge with installation if mapped)
+      for (const [prodId, prodTarget] of Object.entries(prodTargets)) {
+        if (processed.has(prodId)) continue;
+        processed.add(prodId);
+        const prodDef = ALL_ITEMS.find(x => x.id === prodId);
+        if (!prodDef || prodTarget <= 0) continue;
+
+        const instIds = reverseInstMap[prodId] || [];
+        const instTargets = instIds.map(id => instCfg[id] || 0);
+        const totalTarget = Math.max(prodTarget, ...instTargets);
+
+        const khoQty = khoEntries
+          .filter(e => e.projectId === p.id && e.itemId === prodId)
+          .reduce((s, e) => s + e.qty, 0);
+
+        let instQty = 0;
+        for (const instId of instIds) {
+          processed.add(instId);
+          instQty += instLogs
+            .filter(l => l.projectId === p.id && l.itemId === instId)
+            .reduce((s, l) => s + l.qty, 0);
+        }
+        // Also check instLogs directly for the production item (edge case)
+        instQty += instLogs
+          .filter(l => l.projectId === p.id && l.itemId === prodId)
+          .reduce((s, l) => s + l.qty, 0);
+
+        const tonKho = Math.max(0, khoQty - instQty);
+        const pctInstalled = totalTarget > 0 ? (instQty / totalTarget) * 100 : 0;
+        const pctTonKho = totalTarget > 0 ? (tonKho / totalTarget) * 100 : 0;
+        const pctChua = totalTarget > 0 ? Math.max(0, 100 - pctInstalled - pctTonKho) : 100;
+
+        let status: { text: string; cls: string } = { text: "⏳ Chờ nhập kho", cls: "waiting" };
+        if (instQty > 0 && instQty >= totalTarget) {
+          status = { text: "✅ Hoàn thành", cls: "installing" };
+        } else if (instQty > 0) {
+          status = { text: "🔧 Đang lắp đặt", cls: "installing" };
+        } else if (khoQty > 0) {
+          status = { text: "📦 Trong kho", cls: "instock" };
+        }
+
+        items.push({
+          itemId: prodId, itemName: prodDef.label, unit: prodDef.unit,
+          source: "Tự SX",
+          target: totalTarget, khoQty: r2(khoQty), instQty: r2(instQty), tonKho: r2(tonKho),
+          pctInstalled: clamp(pctInstalled, 0, 100),
+          pctTonKho: clamp(pctTonKho, 0, 100),
+          pctChua: clamp(pctChua, 0, 100),
+          status,
+        });
       }
 
-      const items = Object.entries(allTargets)
-        .filter(([itemId]) => ALL_ITEMS.some(x => x.id === itemId))
-        .map(([itemId, target]) => {
-          const def = ALL_ITEMS.find(x => x.id === itemId)!;
-          const isProduced = PROD_ITEMS.some(x => x.id === itemId);
-          const khoQty = khoEntries
-            .filter(e => e.projectId === p.id && e.itemId === itemId)
+      // Phase 2: process remaining installation items (mua ngoài, no production mapping)
+      for (const [instId, instTarget] of Object.entries(instCfg)) {
+        if (processed.has(instId) || instTarget <= 0) continue;
+        processed.add(instId);
+        const instDef = ALL_ITEMS.find(x => x.id === instId);
+        if (!instDef) continue;
+
+        // Check if this install item has a production counterpart in KHO_INST_MAP
+        // that wasn't captured in phase 1 (project has no prodTarget for it)
+        const mappedProdId = KHO_INST_MAP[instId];
+        const prodTargetExists = mappedProdId && (prodTargets[mappedProdId] || 0) > 0;
+
+        // Source: Tự SX if the production counterpart exists in prodTargets, else Mua ngoài
+        const isMuaNgoai = !mappedProdId || !prodTargetExists;
+
+        let khoQty = 0;
+        if (mappedProdId) {
+          // Check kho entries for the production item that supplies this install item
+          khoQty = khoEntries
+            .filter(e => e.projectId === p.id && e.itemId === mappedProdId)
             .reduce((s, e) => s + e.qty, 0);
-          const instQty = instLogs
-            .filter(l => l.projectId === p.id && l.itemId === itemId)
-            .reduce((s, l) => s + l.qty, 0);
-          const tonKho = Math.max(0, khoQty - instQty);
-          const chuaVaoKho = Math.max(0, target - khoQty);
+          // Also check kho entries for the install item itself
+          khoQty += khoEntries
+            .filter(e => e.projectId === p.id && e.itemId === instId)
+            .reduce((s, e) => s + e.qty, 0);
+        } else {
+          khoQty = khoEntries
+            .filter(e => e.projectId === p.id && e.itemId === instId)
+            .reduce((s, e) => s + e.qty, 0);
+        }
 
-          const pctInstalled = target > 0 ? (instQty / target) * 100 : 0;
-          const pctTonKho = target > 0 ? (tonKho / target) * 100 : 0;
-          const pctChua = target > 0 ? (chuaVaoKho / target) * 100 : 100;
+        const instQty = instLogs
+          .filter(l => l.projectId === p.id && l.itemId === instId)
+          .reduce((s, l) => s + l.qty, 0);
 
-          let status: { text: string; cls: string } = { text: "⏳ Chờ nhập kho", cls: "waiting" };
-          if (instQty > 0 && instQty >= target) {
-            status = { text: "✅ Hoàn thành", cls: "installing" };
-          } else if (instQty > 0) {
-            status = { text: "🔧 Đang lắp đặt", cls: "installing" };
-          } else if (khoQty > 0) {
-            status = { text: "📦 Trong kho", cls: "instock" };
-          }
+        const tonKho = Math.max(0, khoQty - instQty);
+        const pctInstalled = instTarget > 0 ? (instQty / instTarget) * 100 : 0;
+        const pctTonKho = instTarget > 0 ? (tonKho / instTarget) * 100 : 0;
+        const pctChua = instTarget > 0 ? Math.max(0, 100 - pctInstalled - pctTonKho) : 100;
 
-          return {
-            itemId, itemName: def.label,
-            source: isProduced ? "Tự SX" as const : "Mua ngoài" as const,
-            khoQty: r2(khoQty), instQty: r2(instQty), tonKho: r2(tonKho),
-            target, pctInstalled: clamp(pctInstalled, 0, 100),
-            pctTonKho: clamp(pctTonKho, 0, 100),
-            pctChua: clamp(pctChua, 0, 100),
-            status,
-          };
-        })
-        .filter(item => item.target > 0);
+        let status: { text: string; cls: string } = { text: "⏳ Chờ nhập kho", cls: "waiting" };
+        if (instQty > 0 && instQty >= instTarget) {
+          status = { text: "✅ Hoàn thành", cls: "installing" };
+        } else if (instQty > 0) {
+          status = { text: "🔧 Đang lắp đặt", cls: "installing" };
+        } else if (khoQty > 0) {
+          status = { text: "📦 Trong kho", cls: "instock" };
+        }
+
+        items.push({
+          itemId: instId, itemName: instDef.label, unit: instDef.unit,
+          source: isMuaNgoai ? "Mua ngoài" : "Tự SX",
+          target: instTarget, khoQty: r2(khoQty), instQty: r2(instQty), tonKho: r2(tonKho),
+          pctInstalled: clamp(pctInstalled, 0, 100),
+          pctTonKho: clamp(pctTonKho, 0, 100),
+          pctChua: clamp(pctChua, 0, 100),
+          status,
+        });
+      }
 
       return { project: p, items };
     });
@@ -140,9 +223,10 @@ export function WarehouseTab() {
               <thead>
                 <tr>
                   <th className="left" style={{minWidth:200}}>Hạng mục</th>
-                  <th style={{minWidth:65}}>Nguồn</th>
-                  <th style={{minWidth:70}}>Vào kho</th>
-                  <th style={{minWidth:65}}>Đã LĐ</th>
+                  <th style={{minWidth:55}}>Nguồn</th>
+                  <th style={{minWidth:55}}>KL Cần</th>
+                  <th style={{minWidth:75}}>Đã SX (Vào kho)</th>
+                  <th style={{minWidth:70}}>Đã Lắp đặt</th>
                   <th style={{minWidth:65}}>Tồn kho</th>
                   <th style={{minWidth:180}}>Tiến độ</th>
                   <th style={{minWidth:120}}>Trạng thái</th>
@@ -159,9 +243,10 @@ export function WarehouseTab() {
                         {item.source}
                       </span>
                     </td>
-                    <td className="wh-num blue">{item.khoQty} m²</td>
-                    <td className="wh-num green">{item.instQty} m²</td>
-                    <td className="wh-num gray">{item.tonKho} m²</td>
+                    <td className="wh-num">{item.target} {item.unit}</td>
+                    <td className="wh-num blue">{item.khoQty} {item.unit}</td>
+                    <td className="wh-num green">{item.instQty} {item.unit}</td>
+                    <td className="wh-num gray">{item.tonKho} {item.unit}</td>
                     <td>
                       <div className="wh-progress">
                         {item.pctInstalled > 0 && (

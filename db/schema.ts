@@ -105,3 +105,21 @@ export const appSettings = pgTable("app_settings", {
   value: jsonb("value").notNull().default(sql`'{}'::jsonb`),
   updatedAt: text("updated_at").notNull().default(""),
 });
+
+export const activityLogs = pgTable("activity_logs", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull().default(""),
+  time: text("time").notNull().default(""),
+  projectId: text("project_id").notNull().default(""),
+  projectName: text("project_name").notNull().default(""),
+  itemId: text("item_id").notNull().default(""),
+  itemName: text("item_name").notNull().default(""),
+  unit: text("unit").notNull().default(""),
+  qty: real("qty").notNull().default(0),
+  action: text("action").notNull().default(""),
+  actionLabel: text("action_label").notNull().default(""),
+  actorName: text("actor_name").notNull().default(""),
+  actorRole: text("actor_role").notNull().default(""),
+  note: text("note").notNull().default(""),
+  createdAt: text("created_at").notNull().default(""),
+});

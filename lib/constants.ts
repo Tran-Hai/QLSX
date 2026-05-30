@@ -136,11 +136,13 @@ export const TAB_NAMES: Record<string, string> = {
   daily_labor: "C\u00F4ng nh\u1EADt",
   installation: "L\u1EAFp \u0111\u1EB7t",
   weekly_plan: "KH tu\u1EA7n",
+  activity_log: "Nh\u1EADt k\u00FD",
 };
 
 export const TABLE_WHITELIST = [
   "projects", "prod_logs", "inst_logs", "kho_entries",
   "staff", "tasks", "cong_nhat", "leaves", "app_settings",
+  "activity_logs",
 ] as const;
 
 export type TableName = typeof TABLE_WHITELIST[number];
@@ -151,4 +153,5 @@ export const TABLE_KEY_MAP: Record<string, string> = {
   kho_entries: "khoEntries",
   cong_nhat: "congNhat",
   app_settings: "appSettings",
+  activity_logs: "activityLogs",
 };

@@ -95,14 +95,30 @@ export function ProductionTab() {
     if (!proj) return;
     const key = `prod:${itemId}`;
     setSaving(prev => ({ ...prev, [key]: true }));
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
     try {
-      await fetch("/api/prod_logs", {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          id: uid(), date, projectId: proj.id, projectName: proj.name,
-          itemId, itemName, unit, qty, note: "", createdAt: todayStr(),
+      const [r1, r2] = await Promise.all([
+        fetch("/api/prod_logs", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            id: uid(), date, projectId: proj.id, projectName: proj.name,
+            itemId, itemName, unit, qty, note: "", createdAt: todayStr(),
+          }),
         }),
-      });
+        fetch("/api/activity_logs", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            id: uid(), date, time: timeStr,
+            projectId: proj.id, projectName: proj.name,
+            itemId, itemName, unit, qty,
+            action: "nhap_kho", actionLabel: "\u{1F7E6} Nh\u1EADp kho",
+            actorName: "", actorRole: "",
+            note: "", createdAt: todayStr(),
+          }),
+        }),
+      ]);
+      if (!r1.ok || !r2.ok) throw new Error("Save failed");
       setInputs(prev => ({ ...prev, [itemId]: "" }));
       await load();
     } finally {

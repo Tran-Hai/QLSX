@@ -110,18 +110,35 @@ export function InstallationTab() {
 
     const saveKey = `save:${key}`;
     setSaving(prev => ({ ...prev, [saveKey]: true }));
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    const techNote = note;
     try {
       const stableId = `inst-${projectId}-${itemId}-${date}`;
-      await fetch("/api/inst_logs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: stableId, date, projectId, projectName: p.name,
-          itemId, itemName: def.label, unit: def.unit,
-          qty, note: "", techStatus: status, techNote: note,
-          createdAt: todayStr(),
+      const [r1, r2] = await Promise.all([
+        fetch("/api/inst_logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: stableId, date, projectId, projectName: p.name,
+            itemId, itemName: def.label, unit: def.unit,
+            qty, note: "", techStatus: status, techNote,
+            createdAt: todayStr(),
+          }),
         }),
-      });
+        fetch("/api/activity_logs", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            id: uid(), date, time: timeStr,
+            projectId, projectName: p.name,
+            itemId, itemName: def.label, unit: def.unit, qty,
+            action: "ra_cong_truong", actionLabel: "\u{1F7E9} L\u1EAFp \u0111\u1EB7t",
+            actorName: "", actorRole: "",
+            note: techNote || "", createdAt: todayStr(),
+          }),
+        }),
+      ]);
+      if (!r1.ok || !r2.ok) throw new Error("Save failed");
       setFormQtys(prev => ({ ...prev, [key]: "" }));
       await load();
     } finally {
