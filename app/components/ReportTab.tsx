@@ -343,7 +343,7 @@ export function ReportTab() {
             <Button size="sm" style={{marginLeft:"auto"}} onClick={() => window.print()}>🖨️ In báo cáo ngày</Button>
           </div>
 
-          <div className="rp-kpi-grid" style={{gridTemplateColumns:"repeat(4, 1fr)"}}>
+          <div className="rp-kpi-grid rp-kpi-grid-4">
             <div className="rp-kpi"><div className="rk-icon" style={{background:"rgba(76,217,100,0.12)"}}>✅</div>
               <div className="rk-info" style={{textAlign:"center"}}><div className="rk-num" style={{color:"var(--green)", fontSize:28}}>{tcDone}</div>
                 <div className="rk-label">Hoàn thành</div></div></div>

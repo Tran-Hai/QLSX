@@ -125,7 +125,7 @@ export function DashboardTab() {
                 </div>
                 <div style={{display:"flex", alignItems:"center", gap:10}}>
                   <span style={{fontSize:12, color:"var(--t2)"}}>{r2(g.overallPct)}%</span>
-                  <div style={{width:120, height:8, background:"rgba(255,255,255,0.06)", borderRadius:4, overflow:"hidden"}}>
+                  <div className="dash-progress-bar">
                     <div style={{width:`${g.overallPct}%`, height:"100%", background:barColor(g.overallPct), borderRadius:4, transition:"width 0.3s"}} />
                   </div>
                 </div>

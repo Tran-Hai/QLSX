@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardTab } from "./components/DashboardTab";
 import { ProjectsTab } from "./components/ProjectsTab";
 import { StaffTab } from "./components/StaffTab";
@@ -14,6 +14,7 @@ import { InstallationTab } from "./components/InstallationTab";
 import { WeeklyPlanTab } from "./components/WeeklyPlanTab";
 import { ActivityLogTab } from "./components/ActivityLogTab";
 import { PurchaseTab } from "./components/PurchaseTab";
+
 const SIDEBAR_ITEMS = [
   { id: "dashboard", icon: "▦", label: "Tổng quan" },
   { id: "projects", icon: "🏗", label: "Công trình" },
@@ -55,12 +56,34 @@ const TabComponent: Record<string, React.ComponentType> = {
 
 export default function Home() {
   const [tab, setTab] = useState("dashboard");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const switchTab = (id: string) => {
+    setTab(id);
+    setMobileOpen(false);
+  };
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
 
   const ActiveTab = TabComponent[tab] || DashboardTab;
+  const activeItem = SIDEBAR_ITEMS.find(i => i.id === tab)!;
 
   return (
     <div className="app-layout">
-      <nav className="app-sidebar">
+      <div className="mobile-header">
+        <button className="mh-hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
+          <span /><span /><span />
+        </button>
+        <span className="mh-icon">{activeItem.icon}</span>
+        <span className="mh-title">{activeItem.label}</span>
+      </div>
+
+      <div className={`mobile-backdrop${mobileOpen ? " open" : ""}`} onClick={() => setMobileOpen(false)} />
+
+      <nav className={`app-sidebar${mobileOpen ? " mobile-open" : ""}`}>
         <div className="sidebar-logo">
           <svg viewBox="0 0 28 28" fill="none">
             <rect x="2" y="2" width="10" height="10" rx="3" fill="currentColor" opacity="0.6"/>
@@ -79,7 +102,7 @@ export default function Home() {
                 <button
                   key={id}
                   className={`tab-btn ${tab === id ? "active" : ""}`}
-                  onClick={() => setTab(id)}
+                  onClick={() => switchTab(id)}
                 >
                   <span className="tab-icon">{item.icon}</span>
                   <span className="tab-label">{item.label}</span>
