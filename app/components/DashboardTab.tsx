@@ -27,21 +27,23 @@ export function DashboardTab() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [congNhat, setCongNhat] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
+    setApiError(null);
     Promise.all([
-      fetch("/api/projects").then(r=>r.json()),
-      fetch("/api/prod_logs").then(r=>r.json()),
-      fetch("/api/inst_logs").then(r=>r.json()),
-      fetch("/api/kho_entries").then(r=>r.json()),
-      fetch("/api/staff").then(r=>r.json()),
-      fetch("/api/tasks").then(r=>r.json()),
-      fetch("/api/cong_nhat").then(r=>r.json()),
-      fetch("/api/leaves").then(r=>r.json()),
+      fetch("/api/projects").then(async r => { if (!r.ok) throw new Error(`projects ${r.status}`); return r.json(); }),
+      fetch("/api/prod_logs").then(async r => { if (!r.ok) throw new Error(`prod_logs ${r.status}`); return r.json(); }),
+      fetch("/api/inst_logs").then(async r => { if (!r.ok) throw new Error(`inst_logs ${r.status}`); return r.json(); }),
+      fetch("/api/kho_entries").then(async r => { if (!r.ok) throw new Error(`kho_entries ${r.status}`); return r.json(); }),
+      fetch("/api/staff").then(async r => { if (!r.ok) throw new Error(`staff ${r.status}`); return r.json(); }),
+      fetch("/api/tasks").then(async r => { if (!r.ok) throw new Error(`tasks ${r.status}`); return r.json(); }),
+      fetch("/api/cong_nhat").then(async r => { if (!r.ok) throw new Error(`cong_nhat ${r.status}`); return r.json(); }),
+      fetch("/api/leaves").then(async r => { if (!r.ok) throw new Error(`leaves ${r.status}`); return r.json(); }),
     ]).then(([p, pl, il, ke, s, t, cn, l]) => {
       setProjects(p); setProdLogs(pl); setInstLogs(il); setKhoEntries(ke);
       setStaff(s); setTasks(t); setCongNhat(cn); setLeaves(l);
-    }).catch(()=>{});
+    }).catch((err: any) => setApiError(err?.message || "Lỗi kết nối dữ liệu"));
   }, []);
 
   const today = todayStr();
@@ -106,6 +108,15 @@ export function DashboardTab() {
         <StatCard icon="📋" num={congNhat.length} label="Công nhật" color="purple" />
         <StatCard icon="🏖️" num={leaves.length} label="Nghỉ phép" color="warn" />
       </div>
+
+      {/* Error state */}
+      {apiError && (
+        <div className="pd-empty" style={{marginTop:12, background:"var(--red-bg)", borderRadius:"var(--radius)", padding:20}}>
+          <div style={{fontSize:14, fontWeight:600, color:"var(--red)", marginBottom:4}}>⚠️ Lỗi kết nối</div>
+          <div style={{fontSize:12, color:"var(--t2)"}}>{apiError}</div>
+          <div style={{fontSize:11, color:"var(--t3)", marginTop:8}}>Kiểm tra biến môi trường DATABASE_URL trên Netlify và Netlify Function logs.</div>
+        </div>
+      )}
 
       {/* Per-project details */}
       {projectDetails.length === 0 ? (

@@ -44,7 +44,11 @@ input, textarea, select, button {
   font-size: inherit;
 }
 
-button, .tab-btn, .mh-hamburger { touch-action: manipulation; }
+button, .tab-btn, .mh-hamburger {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
 
 /* ===== LAYOUT ===== */
 .app-layout {
@@ -465,8 +469,10 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     transition: left 0.25s cubic-bezier(0.4,0,0.2,1);
     z-index: 450;
     width: 260px;
+    -webkit-overflow-scrolling: touch;
   }
   .app-sidebar.mobile-open { left: 0; }
+  .app-sidebar .tab-btn { padding: 14px 20px; min-height: 48px; }
   .app-main { margin-left: 0; width: 100%; padding: 16px; padding-top: 72px; }
   .card-row { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr 1fr; }
@@ -501,7 +507,11 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px;
+    padding: 12px;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
   }
   .mh-hamburger span {
     display: block;

@@ -74,7 +74,7 @@ export default function Home() {
   return (
     <div className="app-layout">
       <div className="mobile-header">
-        <button className="mh-hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
+        <button className="mh-hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu" role="button">
           <span /><span /><span />
         </button>
         <span className="mh-icon">{activeItem.icon}</span>
