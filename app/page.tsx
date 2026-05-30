@@ -81,8 +81,6 @@ export default function Home() {
         <span className="mh-title">{activeItem.label}</span>
       </div>
 
-      <div className={`mobile-backdrop${mobileOpen ? " open" : ""}`} onClick={() => setMobileOpen(false)} />
-
       <nav className={`app-sidebar${mobileOpen ? " mobile-open" : ""}`}>
         <div className="sidebar-logo">
           <svg viewBox="0 0 28 28" fill="none">
@@ -112,6 +110,8 @@ export default function Home() {
           </div>
         ))}
       </nav>
+
+      <div className={`mobile-backdrop${mobileOpen ? " open" : ""}`} onClick={() => setMobileOpen(false)} />
       <main className="app-main">
         <ActiveTab />
       </main>
